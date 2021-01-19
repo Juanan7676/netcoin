@@ -1,0 +1,40 @@
+ESTUCTURAS DE DATOS DE LA RED NETCOIN
+
+BLOQUE:
+	id: number | id del bloque (0,1,2,...), en orden de la cadena (el bloque fundador tiene id 0, el segundo id 1...)
+	uuid: string | identificador único del bloque (xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx), x:(a-Z | 0-9).
+	transactions: table | tabla de transacciones
+	sol: number | solucion del bloque. Se verifica que sha256(sol .. serialize(bloque anterior)) < difficulty
+	previous: number | uuid del bloque anterior
+	
+TRANSACCIÓN:
+	id: string | UUID de la transaccion (xxxx-xxxx-xxxx-xxxx), x :(a-Z | 0-9)
+	from: string | clave publica (hex) del emisor
+	to: string | clave publica (hex) del destinatario
+	qty: number | netCoins a transferir
+	sources: table | Tabla con las transacciones de origen. En todas estas transacciones debe aparecer como TO from y se verifica que sum(source[i].qty)>=this.qty
+	remainder: number | netCoins a ser devueltos a si mismos
+	sig: string | firma digital de la transaccion. Se verifica que edsa(id..from..to..qty..serialize(sources), from, sig)==true
+
+CONFLICTOS EN LA CADENA DE BLOQUES
+En caso de conflicto entre dos ramificaciones de la cadena de bloques, los bloques afectados se deberán poner en listas aparte. Hasta que el conflicto no sea resuelto, las transacciones de los bloques nuevos se considerarán inválidas. Se considerará el conflicto resuelto cuando aparezca un nuevo bloque que apunte a uno de los bloques conflictivos, tomándose la cadena más larga:
+
+                              <--- 6A
+1 <--- 2 <--- 3 <--- 4 <--- 5                    Conflicto causado por la aparición de dos bloques que apuntan al mismo (al 5)
+							  <--- 6B
+
+
+                              <--- 6A
+1 <--- 2 <--- 3 <--- 4 <--- 5                    Resolución del conflicto por la aparición de un nuevo bloque que apunta a uno de los dos conflictivos
+							  <--- 6B <--- 7
+
+Aunque es poco probable, esta situación causaría un nuevo conflicto:
+
+                              <--- 6A <--- 7B
+1 <--- 2 <--- 3 <--- 4 <--- 5                    Aparición de un nuevo conflicto
+							  <--- 6B <--- 7A
+
+Por ello, los nodos de la red almacenarán todos los bloques minados, independientemente de si forman parte de la cadena principal de bloques o no, para solventar posibles (aunque muy improbables) futuros conflictos.
+
+ESTRUCTURA DE LA RED NETCRAFT
+
