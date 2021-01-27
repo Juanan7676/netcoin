@@ -5,43 +5,6 @@ local net = require("netcraftAPI")
 local modem = component.modem
 local data = component.data
 
-function explode(d,p)
-  local t, ll
-  t={}
-  ll=0
-  if(#p == 1) then return {p} end
-    while true do
-      l=string.find(p,d,ll,true) -- find the next d in the string
-      if l~=nil then -- if "not not" found then..
-        table.insert(t, string.sub(p,ll,l-1)) -- Save it in our array.
-        ll=l+1 -- save just after where we found it for searching next time.
-      else
-        table.insert(t, string.sub(p,ll)) -- Save what's left in our array.
-        break -- Break at end, as it should be, according to the lua manual.
-      end
-    end
-  return t
-end
-
-function tableHas(t,elem)
-	for _,e in pairs(t) do
-		if e == elem then return true end
-	end
-	return false
-end
-
-function string.fromhex(str)
-    return (str:gsub('..', function (cc)
-        return string.char(tonumber(cc, 16))
-    end))
-end
-
-function string.tohex(str)
-    return (str:gsub('.', function (c)
-        return string.format('%02X', string.byte(c))
-    end))
-end
-
 function createBlock()
 	local r = {}
 	r["id"]=-1

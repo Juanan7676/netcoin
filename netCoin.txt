@@ -1,40 +1,61 @@
 ESTUCTURAS DE DATOS DE LA RED NETCOIN
 
 BLOQUE:
-	id: number | id del bloque (0,1,2,...), en orden de la cadena (el bloque fundador tiene id 0, el segundo id 1...)
-	uuid: string | identificador único del bloque (xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx), x:(a-Z | 0-9).
-	transactions: table | tabla de transacciones
-	sol: number | solucion del bloque. Se verifica que sha256(sol .. serialize(bloque anterior)) < difficulty
+	height: number | id del bloque (0,1,2,...), en orden de la cadena (el bloque fundador tiene id 0, el segundo id 1...)
+	uuid: string | identificador único del bloque (string de longitud 32, a-zA-Z0-9)
+	timestamp: number | fecha de creación del bloque
 	previous: number | uuid del bloque anterior
+	transactions: table | tabla de transacciones
+	nonce: number | solucion del bloque. Se verifica que sha256(nonce .. serialize(este bloque)) < target
+	target: number | target del bloque, a ajustar cada 10 bloques minados (10 bloques -> 100 min, 10min/bloque). El target máximo es 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).
 	
 TRANSACCIÓN:
-	id: string | UUID de la transaccion (xxxx-xxxx-xxxx-xxxx), x :(a-Z | 0-9)
+	id: string | UUID de la transaccion (string de longitud 32, a-zA-Z0-9), x :(a-Z | 0-9)
 	from: string | clave publica (hex) del emisor
 	to: string | clave publica (hex) del destinatario
-	qty: number | netCoins a transferir
-	sources: table | Tabla con las transacciones de origen. En todas estas transacciones debe aparecer como TO from y se verifica que sum(source[i].qty)>=this.qty
-	remainder: number | netCoins a ser devueltos a si mismos
-	sig: string | firma digital de la transaccion. Se verifica que edsa(id..from..to..qty..serialize(sources), from, sig)==true
+	qty: number | NTC a transferir al destinatario (por el orden en que aparecen en "to")
+	sources: {table|nil} | Tabla con las transacciones de origen. En todas estas transacciones debe aparecer como TO from y se verifica que sum(source[i].qty)>=this.qty. Si es nil, es una transacción de generación (sólo puede  aparecer una por bloque).
+	rem: number | cantidad de NTC a transferir al emisor, como cambio
+	sig: string | firma digital de la transaccion. Se verifica que edsa(serialize(transaccion), from, sig)==true
 
-CONFLICTOS EN LA CADENA DE BLOQUES
-En caso de conflicto entre dos ramificaciones de la cadena de bloques, los bloques afectados se deberán poner en listas aparte. Hasta que el conflicto no sea resuelto, las transacciones de los bloques nuevos se considerarán inválidas. Se considerará el conflicto resuelto cuando aparezca un nuevo bloque que apunte a uno de los bloques conflictivos, tomándose la cadena más larga:
+ALMACENAMIENTO DE LA CADENA DE BLOQUES
+Todos los bloques emitidos son almacenados por la red, independientemente de si forman parte de la cadena principal de bloques o no. Para hallar el saldo de un usuario, el sistema hace una búsqueda exhaustiva desde el bloque con mayor height almacenado válido, y realiza un sumatorio de las transacciones en los bloques, siguiendo hacia atrás hasta el bloque génesis, recibidas menos las enviadas. Esta suma, lógicamente, debe ser >= 0.
 
-                              <--- 6A
-1 <--- 2 <--- 3 <--- 4 <--- 5                    Conflicto causado por la aparición de dos bloques que apuntan al mismo (al 5)
-							  <--- 6B
+Para evitar todo este coste computacional, los nodos pueden hacer una "poda" de la cadena de bloques, almacenando para un 'height' concreto el balance actual de todas las cuentas conocidas por la red.
+Estos nodos no se consideran válidos y no pueden realizar transacciones. No obstante, un nodo "completo" que almacene la cadena de bloques completa, puede escuchar la petición de un nodo 'light' que quiera realizar una transacción (cobrando una comisión por ello, si así desea). Los nodos completos, para evitar tener que realizar una búsqueda exahustiva de la cadena de bloques cada vez que realizan una transacción, pueden almacenar en caché (no necesariamente en RAM, puede ser en disco) todas las transacciones no utilizadas de la red.
+
+Cada bloque tiene un tamaño máximo de 10KB. Así, en un disco duro de 3MB, se pueden almacenar como máximo 300 bloques.
 
 
-                              <--- 6A
-1 <--- 2 <--- 3 <--- 4 <--- 5                    Resolución del conflicto por la aparición de un nuevo bloque que apunta a uno de los dos conflictivos
-							  <--- 6B <--- 7
 
-Aunque es poco probable, esta situación causaría un nuevo conflicto:
-
-                              <--- 6A <--- 7B
-1 <--- 2 <--- 3 <--- 4 <--- 5                    Aparición de un nuevo conflicto
-							  <--- 6B <--- 7A
-
-Por ello, los nodos de la red almacenarán todos los bloques minados, independientemente de si forman parte de la cadena principal de bloques o no, para solventar posibles (aunque muy improbables) futuros conflictos.
 
 ESTRUCTURA DE LA RED NETCRAFT
+Hay esencialmente tres tipos de nodos en la red:
 
+- Nodos completos.
+- Nodos "light".
+- Mineros.
+
+1.1) NODOS COMPLETOS
+Los nodos completos almacenan la cadena de bloques completa y se encargan de verificar todos los bloques y transacciones emitidos por la red. Si alguna transacción/bloque es inválido, se desecha. De manera opcional, un nodo completo puede generar claves públicas/privadas y llevar un monedero de NTC con el cual realizar transacciones. Los nodos completos son los únicos de emitir transacciones a la red. Las obligaciones de un nodo completo son:
+- Escuchar transacciones (no verificadas) emitidas por nodos completos y reenviarlas a otros nodos completos y mineros.
+- Escuchar transacciones (no verificadas) emitidas por nodos "light" y, de manera voluntaria, emitir una transacción correspondiente a la red (otros nodos completos y mineros).
+- Escuchar bloques emitidos por mineros y verificarlos. Reenviar dichos bloques a otros nodos completos y "light", en caso de que sean bloques válidos.
+- Escuchar peticiones de obtención de bloques emitidas por otros nodos completos y nodos "light", y atender sus peticiones enviando los datos.
+- Escuchar peticiones para encontrar otros miembros de la red emitidas por cualquier miembro de la red, y atender sus peticiones.
+- Almacenar todos los bloques emitidos por la red.
+
+1.2) NODOS "LIGHT"
+Los nodos light están pensados para actuar como monederos de NTC, para que el usuario final no tenga que afrontar los costes de almacenar toda la cadena de bloques. Los nodos "light" no tienen obligaciones, y sólo funcionan como "interfaz" entre el usuario final y la red NetCoin.
+
+1.3) MINEROS
+Los mineros se encargan de generar nuevos bloques para la red e incluir transacciones en ellos. La inclusión de transacciones en los bloques queda a decisión de los mineros. La verificación de las transacciones las hacen los nodos completos una vez publicado el bloque, pero los mineros deberían abstenerse de incluir transacciones inválidas con el fin de evitar que sus bloques sean rechazados. Los mineros tienen las siguientes obligaciones:
+- Escuchar transacciones (no verificadas) emitidas por nodos completos
+- Emitir nuevos bloques para la red
+
+IMPLEMENTACIÓN ALMACENAJE DE LA CADENA DE BLOQUES
+Con el fin de agilizar la carga de bloques desde el disco duro, se almacena en un archivo "blockIndex.txt" un índice con todos los bloques almacenados junto con su UUID en este formato:
+
+[uuid],[DiskAddress]\n
+
+uuid son 8 dígitos hexadecimales, y diskAddress almacena 2 dígitos hexadecimales del HDD. En total, cada bloque en el índice ocupa (8+1+2+1) = 12 bytes, así que 3MB de índice pueden almacenar 250.000 bloques (que se producirán en 2.500.000 minutos, equivalentemente, en 41.666 horas de media. La cantidad total de UUID que se pueden almacenar son 16^8=4.294.967.296.
