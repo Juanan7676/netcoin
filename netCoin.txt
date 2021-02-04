@@ -6,8 +6,8 @@ BLOQUE:
 	timestamp: number | fecha de creación del bloque
 	previous: number | uuid del bloque anterior
 	transactions: table | tabla de transacciones
-	nonce: number | solucion del bloque. Se verifica que sha256(nonce .. serialize(este bloque)) < target
-	target: number | target del bloque, a ajustar cada 10 bloques minados (10 bloques -> 100 min, 10min/bloque). El target máximo es 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).
+	nonce: number | solucion del bloque. Se verifica que sha256(nonce .. height .. timestamp .. previous .. transactions) <= target
+	target: number | target del bloque, a ajustar cada 10 bloques minados (10 bloques -> 50 min, 5min/bloque). El target máximo es 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).
 	
 TRANSACCIÓN:
 	id: string | UUID de la transaccion (string de longitud 32, a-zA-Z0-9), x :(a-Z | 0-9)
@@ -26,9 +26,6 @@ Estos nodos no se consideran válidos y no pueden realizar transacciones. No obs
 
 Cada bloque tiene un tamaño máximo de 10KB. Así, en un disco duro de 3MB, se pueden almacenar como máximo 300 bloques.
 
-
-
-
 ESTRUCTURA DE LA RED NETCRAFT
 Hay esencialmente tres tipos de nodos en la red:
 
@@ -37,9 +34,9 @@ Hay esencialmente tres tipos de nodos en la red:
 - Mineros.
 
 1.1) NODOS COMPLETOS
-Los nodos completos almacenan la cadena de bloques completa y se encargan de verificar todos los bloques y transacciones emitidos por la red. Si alguna transacción/bloque es inválido, se desecha. De manera opcional, un nodo completo puede generar claves públicas/privadas y llevar un monedero de NTC con el cual realizar transacciones. Los nodos completos son los únicos de emitir transacciones a la red. Las obligaciones de un nodo completo son:
+Los nodos completos almacenan la cadena de bloques completa y se encargan de verificar todos los bloques y transacciones emitidas por la red. Si alguna transacción o bloque es inválido, se desecha. De manera opcional, un nodo completo puede generar claves públicas/privadas y llevar un monedero de NTC con el cual realizar transacciones. Los nodos completos son los únicos que pueden emitir transacciones a la red. Las obligaciones de un nodo completo son:
 - Escuchar transacciones (no verificadas) emitidas por nodos completos y reenviarlas a otros nodos completos y mineros.
-- Escuchar transacciones (no verificadas) emitidas por nodos "light" y, de manera voluntaria, emitir una transacción correspondiente a la red (otros nodos completos y mineros).
+- Escuchar peticiones de transacciones emitidas por nodos "light" y, de manera voluntaria, emitir una transacción correspondiente a la red (otros nodos completos y mineros).
 - Escuchar bloques emitidos por mineros y verificarlos. Reenviar dichos bloques a otros nodos completos y "light", en caso de que sean bloques válidos.
 - Escuchar peticiones de obtención de bloques emitidas por otros nodos completos y nodos "light", y atender sus peticiones enviando los datos.
 - Escuchar peticiones para encontrar otros miembros de la red emitidas por cualquier miembro de la red, y atender sus peticiones.
@@ -54,8 +51,10 @@ Los mineros se encargan de generar nuevos bloques para la red e incluir transacc
 - Emitir nuevos bloques para la red
 
 IMPLEMENTACIÓN ALMACENAJE DE LA CADENA DE BLOQUES
-Con el fin de agilizar la carga de bloques desde el disco duro, se almacena en un archivo "blockIndex.txt" un índice con todos los bloques almacenados junto con su UUID en este formato:
+Con el fin de agilizar la carga de bloques desde el disco duro, se almacena en un archivo "index.txt" un índice con todos los bloques almacenados junto con su UUID en este formato:
 
 [uuid],[DiskAddress]\n
 
-uuid son 8 dígitos hexadecimales, y diskAddress almacena 2 dígitos hexadecimales del HDD. En total, cada bloque en el índice ocupa (8+1+2+1) = 12 bytes, así que 3MB de índice pueden almacenar 250.000 bloques (que se producirán en 2.500.000 minutos, equivalentemente, en 41.666 horas de media. La cantidad total de UUID que se pueden almacenar son 16^8=4.294.967.296.
+uuid son 16 dígitos hexadecimales, y diskAddress almacena 2 dígitos hexadecimales del HDD. En total, cada bloque en el índice ocupa (16+1+2+1) = 20 bytes.
+
+RECÁLCULO DE LA DIFICULTAD DE MINADO
