@@ -51,7 +51,7 @@ map:close()
 
 local function getPort()
     local ret
-    for k,v in ipairs(avports)
+    for k,v in ipairs(avports) do
         if avports[k]==0 then
             avports[k]=1
             ret=k
