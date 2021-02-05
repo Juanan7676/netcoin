@@ -17,17 +17,20 @@ function nodenet.sendClient(c,p,msg)
 end
 
 function nodenet.dispatchNetwork(sv)
-    local clientIP,msg,clientPort = sv.listen()
+    local t = sv.listen()
+    local clientIP = t[1]
+    local msg = t[2]
+    local clientPort = t[3]
     local parsed = explode("####",msg)
     
     if msg[1]=="GETBLOCK" then
         local req = msg[4]
         local block = storage.loadBlock(req)
         if block==nil then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCK_NOT_FOUND")
-        else then nodenet.sendClient(clientIP,clientPort,"OK####"..serial.serialize(block)) end
+        else nodenet.sendClient(clientIP,clientPort,"OK####"..serial.serialize(block)) end
         
     elseif msg[2]=="GETNODES" then
-        for _,client in ipairs(cache.nodes) then
+        for _,client in ipairs(cache.nodes) do
                 nodenet.sendClient(clientIP,clientPort,client.ip .. "####" .. client.port)
             end
         nodenet.sendClient(clientIP,clientPort,"END")
@@ -35,7 +38,7 @@ function nodenet.dispatchNetwork(sv)
         local block = serial.unserialize(msg[3])
         local result = nodenet.newBlock(sv,clientIP,clientPort,block)
         if result==true then
-            for _,client in ipairs(cache.nodes) then
+            for _,client in ipairs(cache.nodes) do
                 nodenet.sendClient(client.ip, client.port, msg[2].."####"..msg[3])
             end
         end
@@ -86,7 +89,7 @@ function nodenet.getResponse(sv,client,port)
     local parsed = explode("####",msg)
     
     if clientIP ~= client then nodenet.sendClient(clientIP,clientPort,"BUSY")
-    else return msg
+    else return msg end
 end
 
 return nodenet

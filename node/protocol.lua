@@ -1,8 +1,9 @@
+component = require("component")
 local data = component.data
 local storage = require("storage")
 local serial = require("serialization")
 
-local cache = {}
+cache = {}
 cache.lb = "error"
 cache.nodes = {}
 function cache.getlastBlock()
@@ -35,7 +36,7 @@ end
 
 function getCurrDifficulty()
     local lb = storage.loadBlock(cache.getlastBlock())
-    if lb.height%50 != 0 then return lb.target end
+    if lb.height%50 ~= 0 then return lb.target end
     
     local tenblocksago = lb
     for k=1,50 do
