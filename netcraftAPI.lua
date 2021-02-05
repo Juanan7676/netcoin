@@ -3,11 +3,11 @@ local event = require("event")
 
 local net = {}
 
-function send(modem,client,port,rport,msg)
+function net.send(modem,client,port,rport,msg)
     modem.send(client,port,rport,msg)
 end
 
-function listen(modem, port, timeout)
+function net.listen(modem, port, timeout)
     modem.open(port)
     local client, clientPort, msg
     
@@ -17,7 +17,7 @@ function listen(modem, port, timeout)
     return client, clientPort, msg
 end
 
-function listentoclient(modem, port, client, timeout)
+function net.listentoclient(modem, port, client, timeout)
     modem.open(port)
     local client, clientPort, msg
     
