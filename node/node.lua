@@ -7,6 +7,7 @@ local component = require("component")
 cache.loadNodes()
 cache.myIP = "1.0.0.0"
 cache.myPort = 2000
+cache.loadlastBlock()
 
 thread.create(function()
     local sv = napi.server(component.modem,cache.myPort)

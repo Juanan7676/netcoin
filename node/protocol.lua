@@ -37,7 +37,7 @@ end
 function getCurrDifficulty()
     if cache.getlastBlock()=="error" then return tonumber((2^240).."") end -- Difficulty for genesis block
     local lb = storage.loadBlock(cache.getlastBlock())
-    if lb.height%50 ~= 0 then return lb.target end
+    if lb.height%50 ~= 0 or lb.height==0 then return lb.target end
     
     local tenblocksago = lb
     for k=1,50 do
