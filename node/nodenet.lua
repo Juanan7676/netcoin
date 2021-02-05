@@ -17,11 +17,10 @@ function nodenet.sendClient(c,p,msg)
 end
 
 function nodenet.dispatchNetwork(sv)
-    local msg,clientPort = sv.listen()
+    local clientIP,msg,clientPort = sv.listen()
     local parsed = explode("####",msg)
-    local clientIP = msg[1]
     
-    if msg[2]=="GETBLOCK" then
+    if msg[1]=="GETBLOCK" then
         local req = msg[4]
         local block = storage.loadBlock(req)
         if block==nil then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCK_NOT_FOUND")
@@ -83,9 +82,8 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
 end
 
 function nodenet.getResponse(sv,client,port)
-    local msg,clientPort = sv.listen()
+    local clientIP,msg,clientPort = sv.listen()
     local parsed = explode("####",msg)
-    local clientIP = msg[1]
     
     if clientIP ~= client then nodenet.sendClient(clientIP,clientPort,"BUSY")
     else return msg

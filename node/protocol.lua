@@ -1,8 +1,10 @@
 local data = component.data
-storage = require("storage")
+local storage = require("storage")
+local serial = require("serialization")
 
 local cache = {}
 cache.lb = "error"
+cache.nodes = {}
 function cache.getlastBlock()
     return cache.lb
 end
@@ -19,6 +21,16 @@ end
 function cache.setlastBlock(uuid)
     cache.lb = uuid
     cache.savelastBlock()
+end
+function cache.loadNodes()
+    local file = io.open("nodes.txt","r")
+    cache.nodes = serial.unserialize(file:read("*a"))
+    file:close()
+end
+function cache.saveNodes()
+    local file = io.open("nodes.txt","w")
+    file:write(serial.serialize(cache.nodes))
+    file:close()
 end
 
 function getCurrDifficulty()
