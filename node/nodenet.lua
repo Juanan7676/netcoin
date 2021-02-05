@@ -21,7 +21,7 @@ function nodenet.dispatchNetwork(sv)
     local clientIP = t[1]
     local msg = t[2]
     local clientPort = t[3]
-    local parsed = explode(msg,"####")
+    local parsed = explode("####",msg)
     
     if parsed[1]=="GETBLOCK" then
         local req = parsed[2]
@@ -81,7 +81,6 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
         consolidateBlock(block)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
         return true
-        end
     end
     return false
 end

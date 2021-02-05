@@ -35,6 +35,7 @@ function cache.saveNodes()
 end
 
 function getCurrDifficulty()
+    if cache.getlastBlock()=="error" then return 2^240 end -- Difficulty for genesis block
     local lb = storage.loadBlock(cache.getlastBlock())
     if lb.height%50 ~= 0 then return lb.target end
     
@@ -50,6 +51,7 @@ function getCurrDifficulty()
 end
 
 function getCurrReward()
+    if cache.getlastBlock()=="error" then return 50000000 end -- Reward for genesis block
     local lb = storage.loadBlock(cache.getlastBlock())
     local halvings = math.floor(lb.height/1000)
     return math.floor(50000000 / 2^halvings)
