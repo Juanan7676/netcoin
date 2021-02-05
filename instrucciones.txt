@@ -1,0 +1,9 @@
+- Para routers finales de usuario poner "false" al final de los mappings que lleguen al router en cuestion. EL INPUT MODEM DEBE CONECTAR CON EL CLIENTE.
+
+21f
+398
+9b8
+b14
+d8f
+ed0
+ff6

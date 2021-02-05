@@ -10,17 +10,11 @@ require("common")
 local nodenet = {}
 
 function nodenet.sendClient(c,p,msg)
-    local sock = napi.connect(modem,c,p)
-    if sock==false then return false end
-    napi.send(sock,cache.myIP.."####"..msg,2000)
-    napi.close(sock)
+    modem.send(c,p,cache.myPort,msg)
 end
 
 function nodenet.dispatchNetwork(sv)
-    local t = sv.listen()
-    local clientIP = t[1]
-    local msg = t[2]
-    local clientPort = t[3]
+    local clientIP,clientPort,msg = napi.listen(modem)
     local parsed = explode("####",msg)
     
     if parsed[1]=="GETBLOCK" then
