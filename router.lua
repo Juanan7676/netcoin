@@ -32,7 +32,12 @@ event = require("event")
 map = io.open("map.txt","r")
 connections = {}
 mappings = {}
-last = 0
+avports = {}
+
+for k=1,9998 do
+    table.insert(avports,0)
+end
+
 myIP = config:read()
 config:close()
 
@@ -44,12 +49,25 @@ while line~=nil do
 end
 map:close()
 
+local function getPort()
+    local ret
+    for k,v in ipairs(avports)
+        if avports[k]==0 then
+            avports[k]=1
+            ret=k
+            break
+        end
+    end
+    return ret
+end
+
 local function newConnection(ip,user,port)
   local arr = explode(ip,".")
   for _,mapping in pairs(mappings) do
     if arr[1] >= mapping[1][1] and arr[1] <= mapping[1][2] and arr[2] >= mapping[2][1] and arr[2] <= mapping[2][2] and
        arr[3] >= mapping[3][1] and arr[3] <= mapping[3][2] and arr[4] >= mapping[4][1] and arr[4] <= mapping[4][2] then
-        last = last + 1
+        local last = getPort()
+        if last==nil then return false end
         table.insert(connections,{last,ip,port,mapping[5],mapping[6]})
       print("Opening tunnel to ip "..ip.." on port "..last)
       return {last,ip,port,mapping[5],mapping[6]}
@@ -68,6 +86,7 @@ end
 
 local function deleteConnection(port)
     if port==9999 then return true end
+    avports[port]=0
   for k,p in pairs(connections) do
     if p[1]==port then 
       connections[k]=nil

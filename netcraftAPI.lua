@@ -2,9 +2,9 @@
 
 local net = {}
 
-function explode(p,d)
+local function explode(d,p)
   local t, ll
-  t={}
+  local t={}
   ll=0
   if(#p == 1) then return {p} end
     while true do
@@ -26,7 +26,7 @@ function net.server(modem,port)
       if (timeout==nil) then _,_,_,_,_,msg = require("event").pull("modem_message")
       else _,_,_,_,_,msg = require("event").pull(timeout,"modem_message") end
 	  if msg == nil then return nil end
-      return explode(msg,"!") -- { ip,msg,responsePort }
+      return explode("!",msg) -- { ip,msg,responsePort }
     end
   }
 end

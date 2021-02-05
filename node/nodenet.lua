@@ -12,7 +12,7 @@ local nodenet = {}
 function nodenet.sendClient(c,p,msg)
     local sock = napi.connect(modem,c,p)
     if sock==false then return false end
-    napi.send(sock,cache.myIP.."####"..msg)
+    napi.send(sock,cache.myIP.."####"..msg,2000)
     napi.close(sock)
 end
 
@@ -21,25 +21,25 @@ function nodenet.dispatchNetwork(sv)
     local clientIP = t[1]
     local msg = t[2]
     local clientPort = t[3]
-    local parsed = explode("####",msg)
+    local parsed = explode(msg,"####")
     
-    if msg[1]=="GETBLOCK" then
-        local req = msg[4]
+    if parsed[1]=="GETBLOCK" then
+        local req = parsed[2]
         local block = storage.loadBlock(req)
         if block==nil then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCK_NOT_FOUND")
         else nodenet.sendClient(clientIP,clientPort,"OK####"..serial.serialize(block)) end
         
-    elseif msg[2]=="GETNODES" then
+    elseif parsed[1]=="GETNODES" then
         for _,client in ipairs(cache.nodes) do
                 nodenet.sendClient(clientIP,clientPort,client.ip .. "####" .. client.port)
             end
         nodenet.sendClient(clientIP,clientPort,"END")
-    elseif msg[2]=="NEWBLOCK" then
-        local block = serial.unserialize(msg[3])
+    elseif parsed[1]=="NEWBLOCK" then
+        local block = serial.unserialize(parsed[2])
         local result = nodenet.newBlock(sv,clientIP,clientPort,block)
         if result==true then
             for _,client in ipairs(cache.nodes) do
-                nodenet.sendClient(client.ip, client.port, msg[2].."####"..msg[3])
+                nodenet.sendClient(client.ip, client.port, parsed[1].."####"..parsed[2])
             end
         end
     end
