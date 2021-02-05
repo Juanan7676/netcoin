@@ -35,7 +35,7 @@ function cache.saveNodes()
 end
 
 function getCurrDifficulty()
-    if cache.getlastBlock()=="error" then return 2^240 end -- Difficulty for genesis block
+    if cache.getlastBlock()=="error" then return tonumber((2^240).."") end -- Difficulty for genesis block
     local lb = storage.loadBlock(cache.getlastBlock())
     if lb.height%50 ~= 0 then return lb.target end
     
@@ -47,7 +47,7 @@ function getCurrDifficulty()
     local correctionFactor = (15000/timeDiff)
     if correctionFactor > 4 then correctionFactor = 4 end
     if correctionFactor < 0.25 then correctionFactor = 0.25 end
-    return lb.target * correctionFactor
+    return tonumber((lb.target * correctionFactor).."")
 end
 
 function getCurrReward()
@@ -59,7 +59,7 @@ end
 
 function verifyTransaction(t)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
-    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serialization.serialize(sources) .. t.rem, t.from, t.sig) then return false end
+    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, t.from, t.sig) then return false end
     
     if (t.sources == nil) then return "gen" end
     local inputSum = 0
@@ -89,7 +89,7 @@ function verifyBlock(block)
         if prev.timestamp >= block.timestamp then return false end
     end
     
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serialization.serialize(block.transactions))),16) > block.target then return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
     local genFound = false
     for _,v in ipairs(block.transactions) do
         result = verifyTransaction(v)

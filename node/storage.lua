@@ -2,6 +2,7 @@ local storage = {}
 
 component = require("component")
 serial = require("serialization")
+filesys = require("filesystem")
 require("common")
 storage.data = component.data
 storage.disks = {}
@@ -86,7 +87,7 @@ function storage.saveIndex(uuid,disk)
     end
 end
 
-function storage.loadBlock(uuid,disk)
+function storage.loadBlock(uuid)
     local index = storage.loadIndex(uuid)
     if index==nil then return nil end
     local data = explode(",",index)
@@ -99,7 +100,7 @@ function storage.loadBlock(uuid,disk)
 end
 
 function storage.saveBlock(block)
-    if storage.loadBlock(block) ~= nil then return end
+    if storage.loadBlock(block.uuid) ~= nil then return end
     local data = serial.serialize(block)
     for k,d in pairs(storage.disks) do
         local hdd = component.proxy(component.get(d))
@@ -154,9 +155,8 @@ function storage.removeutxo(uuid)
     end
     file:close()
     newfile:close()
-    local fs = component.proxy(storage.utxoDisk)
-    fs.remove("utxo.txt")
-    fs.rename("utxo2.txt","utxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/utxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/utxo2.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
 end
 
 function storage.removeutxo(uuid)
@@ -168,25 +168,22 @@ function storage.removeutxo(uuid)
     end
     file:close()
     newfile:close()
-    local fs = component.proxy(storage.utxoDisk)
-    fs.remove("remutxo.txt")
-    fs.rename("remutxo2.txt","remutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/remutxo2.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
 end
 
 function storage.cacheutxo()
-    local fs = component.proxy(storage.utxoDisk)
-    fs.remove("utxo_cached.txt")
-    fs.copy("utxo.txt","utxo_cached.txt")
-    fs.remove("remutxo_cached.txt")
-    fs.copy("remutxo.txt","remutxo_cached.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/utxo_cached.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo.txt","/mnt/"..(storage.utxoDisk).."/utxo_cached.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo.txt","/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt")
 end
 
 function storage.restoreutxo()
-    local fs = component.proxy(storage.utxoDisk)
-    fs.remove("utxo.txt")
-    fs.copy("utxo_cached.txt","utxo.txt")
-    fs.remove("remutxo.txt")
-    fs.copy("remutxo_cached.txt","remutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/utxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo_cached.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
 end
 
 return storage
