@@ -85,8 +85,8 @@ local function connExists(port)
 end
 
 local function deleteConnection(port)
-    if port==9999 then return true end
-    avports[port]=0
+   if port==9999 then return true end
+   avports[tonumber(port)]=0
   for k,p in pairs(connections) do
     if p[1]==port then 
       connections[k]=nil

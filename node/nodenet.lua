@@ -46,8 +46,10 @@ function nodenet.dispatchNetwork(sv)
 end
 
 function nodenet.newBlock(sv,clientIP,clientPort,block)
-    if block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
-        else if block.previous ~= cache.getlastBlock() then -- We need more blocks!
+    if not block or not block.height then return false end
+    if cache.getlastBlock()~="error" and block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
+    elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
+    elseif cache.getlastBlock()~="error" and block.previous ~= cache.getlastBlock() then -- We need more blocks!
             local lb = storage.loadBlock(cache.getlastBlock())
             local chain = lb
             local recv = {block}
@@ -74,11 +76,11 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             end
             
-        elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
-        else
-            consolidateBlock(block)
-            nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
-            return true
+    elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
+    else
+        consolidateBlock(block)
+        nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
+        return true
         end
     end
     return false
