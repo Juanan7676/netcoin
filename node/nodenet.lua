@@ -51,7 +51,8 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
                 local tries = 0
                 repeat
                 nodenet.sendClient("GETBLOCK,"..(recv.previous))
-                local msg = explode("####",nodenet.getResponse(sv,client,port))
+                local _,_,msg = napi.listentoclient(modem,clientIP)
+                msg = explode("####",msg)
                 tries = tries + 1
                 until msg[2] ~= "OK" and tries < 5
                 if tries >= 5 then return false end
@@ -77,14 +78,6 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
         return true
     end
     return false
-end
-
-function nodenet.getResponse(sv,client,port)
-    local clientIP,msg,clientPort = sv.listen()
-    local parsed = explode("####",msg)
-    
-    if clientIP ~= client then nodenet.sendClient(clientIP,clientPort,"BUSY")
-    else return msg end
 end
 
 return nodenet
