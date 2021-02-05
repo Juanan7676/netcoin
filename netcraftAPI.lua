@@ -3,7 +3,12 @@ local event = require("event")
 
 local net = {}
 
-function listen(modem, timeout)
+function send(modem,client,port,rport,msg)
+    modem.send(client,port,rport,msg)
+end
+
+function listen(modem, port, timeout)
+    modem.open(port)
     local client, clientPort, msg
     
     if(timeout==nil) then _,client,_,_,clientPort,msg = event.pull("modem_message")
@@ -12,7 +17,8 @@ function listen(modem, timeout)
     return client, clientPort, msg
 end
 
-function listentoclient(modem, client, timeout)
+function listentoclient(modem, port, client, timeout)
+    modem.open(port)
     local client, clientPort, msg
     
     if(timeout==nil) then _,client,_,_,clientPort,msg = event.pull("modem_message",nil,client)
