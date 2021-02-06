@@ -13,8 +13,8 @@ function nodenet.sendClient(c,p,msg)
     modem.send(c,p,cache.myPort,msg)
 end
 
-function nodenet.dispatchNetwork(sv)
-    local clientIP,clientPort,msg = napi.listen(modem)
+function nodenet.dispatchNetwork()
+    local clientIP,clientPort,msg = napi.listen(modem, cache.myPort)
     local parsed = explode("####",msg)
     
     if parsed[1]=="GETBLOCK" then
@@ -30,7 +30,7 @@ function nodenet.dispatchNetwork(sv)
         nodenet.sendClient(clientIP,clientPort,"END")
     elseif parsed[1]=="NEWBLOCK" then
         local block = serial.unserialize(parsed[2])
-        local result = nodenet.newBlock(sv,clientIP,clientPort,block)
+        local result = nodenet.newBlock(clientIP,clientPort,block)
         if result==true then
             for _,client in ipairs(cache.nodes) do
                 nodenet.sendClient(client.ip, client.port, parsed[1].."####"..parsed[2])
@@ -39,7 +39,7 @@ function nodenet.dispatchNetwork(sv)
     end
 end
 
-function nodenet.newBlock(sv,clientIP,clientPort,block)
+function nodenet.newBlock(clientIP,clientPort,block)
     if not block or not block.height then return false end
     if cache.getlastBlock()~="error" and block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
     elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
@@ -61,12 +61,12 @@ function nodenet.newBlock(sv,clientIP,clientPort,block)
                 table.insert(recv,recvb)
                 chain = storage.loadBlock(chain.previous)
             end
-            if ((lb.height - lb.height%10) ~= (recv.height - lb.height%10)) then
-                local result = protocol.reconstructUTXOFromCache(chain, recv)
+            if ((lb.height - lb.height%10) ~= (chain.height - lb.height%10)) then
+                local result = protocol.reconstructUTXOFromCache(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCKS")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             else
-                local result = protocol.reconstructUTXOFromZero(chain, recv)
+                local result = protocol.reconstructUTXOFromZero(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             end

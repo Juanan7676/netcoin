@@ -116,20 +116,32 @@ function storage.saveBlock(block)
     return nil
 end
 
-function storage.saveutxo(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/utxo.txt","a")
+function storage.tmpsaveutxo(uuid) storage.saveutxo(uuid,true) end
+function storage.saveutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt","a")
     file:write(uuid.."\n")
     file:close()
 end
 
-function storage.saveremutxo(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/remutxo.txt","a")
+function storage.tmpsaveremutxo(uuid) storage.saveremutxo(uuid,true) end
+function storage.saveremutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt","a")
     file:write(uuid.."\n")
     file:close()
 end
 
-function storage.utxopresent(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/utxo.txt","r")
+function storage.tmputxopresent(uuid) storage.utxopresent(uuid,true) end
+function storage.utxopresent(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt","r")
     local line = file:read()
     while line ~= nil do
         if line==uuid then return true end
@@ -137,8 +149,12 @@ function storage.utxopresent(uuid)
     return false
 end
 
-function storage.remutxopresent(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/remutxo.txt","r")
+function storage.tmpremutxopresent(uuid) storage.remutxopresent(uuid,true) end
+function storage.remutxopresent(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+    
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt","r")
     local line = file:read()
     while line ~= nil do
         if line==uuid then return true end
@@ -146,30 +162,53 @@ function storage.remutxopresent(uuid)
     return false
 end
 
-function storage.removeutxo(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/utxo.txt","r")
-    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/utxo2.txt","w")
+function storage.tmpremoveutxo(uuid) storage.removeutxo(uuid,true) end
+function storage.removeutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+    
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt","r")
+    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo2.txt","w")
     local line = file:read()
     while line ~= nil do
         if line~=uuid then newfile:write(line.."\n") end
     end
     file:close()
     newfile:close()
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/utxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
+end
+
+function storage.tmpremoveremutxo(uuid) storage.removeremutxo(uuid,true) end
+function storage.removeremutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+    
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt","r")
+    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo2.txt","w")
+    local line = file:read()
+    while line ~= nil do
+        if line~=uuid then newfile:write(line.."\n") end
+    end
+    file:close()
+    newfile:close()
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt")
+end
+
+function storage.discardtmputxo()
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmputxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt")
+end
+
+function storage.consolidatetmputxo()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/utxo.txt")
-    filesys.rename("/mnt/"..(storage.utxoDisk).."/utxo2.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
-end
-
-function storage.removeutxo(uuid)
-    local file = io.open("/mnt/"..(storage.utxoDisk).."/remutxo.txt","r")
-    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/remutxo2.txt","w")
-    local line = file:read()
-    while line ~= nil do
-        if line~=uuid then newfile:write(line.."\n") end
-    end
-    file:close()
-    newfile:close()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo.txt")
-    filesys.rename("/mnt/"..(storage.utxoDisk).."/remutxo2.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/tmputxo.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
+    
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmputxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt")
 end
 
 function storage.cacheutxo()

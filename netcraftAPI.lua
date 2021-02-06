@@ -11,8 +11,8 @@ function net.listen(modem, port, timeout)
     modem.open(port)
     local client, clientPort, msg
     
-    if(timeout==nil) then _,client,_,_,clientPort,msg = event.pull("modem_message")
-    else _,client,_,_,clientPort,msg = event.pull("modem_message") end
+    if(timeout==nil) then _,_,client,_,_,clientPort,msg = event.pull("modem_message")
+    else _,_,client,_,_,clientPort,msg = event.pull(timeout,"modem_message") end
     
     return client, clientPort, msg
 end
@@ -21,8 +21,8 @@ function net.listentoclient(modem, port, client, timeout)
     modem.open(port)
     local client, clientPort, msg
     
-    if(timeout==nil) then _,client,_,_,clientPort,msg = event.pull("modem_message",nil,client)
-    else _,client,_,_,clientPort,msg = event.pull("modem_message",nil,client) end
+    if(timeout==nil) then _,_,client,_,_,clientPort,msg = event.pull("modem_message",nil,client)
+    else _,_,client,_,_,clientPort,msg = event.pull(timeout,"modem_message",nil,client) end
     return client, clientPort, msg
 end
 
