@@ -36,6 +36,9 @@ function nodenet.dispatchNetwork()
                 nodenet.sendClient(client.ip, client.port, parsed[1].."####"..parsed[2])
             end
         end
+    elseif parsed[1]=="NEWNODE" then
+        local node = parsed[2]
+        if 
     end
 end
 

@@ -53,9 +53,9 @@ end
 
 function verifyTransaction(t, up, rup)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
-    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, t.from, t.sig) then return false end
+    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, data.deserializeKey(t.from,"ec-public"), t.sig) then return false end
     
-    if (t.sources == nil) then return "gen" end
+    if (#t.sources == 0) then return "gen" end
     local inputSum = 0
     for _,v in ipairs(t.sources) do
         if v.from == t.from then --This is a remainder
@@ -94,7 +94,7 @@ end
 function verifyTransactions(block, tmp)
     local genFound = false
     for _,v in ipairs(block.transactions) do
-        if (tmp==nil then result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
+        if (tmp==nil) then result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
         else result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent) end
         if result==false then return false end
         if result=="gen" then
@@ -200,6 +200,5 @@ function reconstructUTXOFromCache(newblocks, lastblock)
         updatetmputxo(block)
     end
     storage.consolidatetmputxo()
-    return true
     return true
 end
