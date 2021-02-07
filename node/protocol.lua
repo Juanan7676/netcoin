@@ -210,5 +210,6 @@ function reconstructUTXOFromCache(newblocks, lastblock)
         updatetmputxo(block)
     end
     storage.consolidatetmputxo()
+    cache.setlastBlock(lastblock.uuid)
     return true
 end
