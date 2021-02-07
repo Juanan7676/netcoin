@@ -80,7 +80,6 @@ function nodenet.dispatchNetwork()
             end
         end
     end
-    end
 end
 
 function nodenet.newBlock(clientIP,clientPort,block)
