@@ -53,17 +53,17 @@ end
 
 function verifyTransaction(t, up, rup)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
-    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, data.deserializeKey(t.from,"ec-public"), t.sig) then return false end
+    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, data.deserializeKey(t.from,"ec-public"), t.sig) then print("invalid signature") return false end
     
     if (#t.sources == 0) then return "gen" end
     local inputSum = 0
     for _,v in ipairs(t.sources) do
         if v.from == t.from then --This is a remainder
-            if not up(v.id) then return false end
+            if not up(v.id) then print("remainder not found") return false end
             inputSum = inputSum + v.rem
         else -- This is a normal transaction
-            if not rup(v.id) then return false end
-            if v.to ~= t.from then return false end
+            if not rup(v.id) then print("source not found") return false end
+            if v.to ~= t.from then print("source not matches") return false end
             inputSum = inputSum + v.qty
         end
     end
@@ -119,9 +119,9 @@ function verifyBlock(block)
     
     local fbago = getPrevChain(block,50)
     if block.target ~= getNextDifficulty(fbago,block) then return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then print("invalid pow") return false end
     
-    if not verifyTransactions(block) then return false end
+    if not verifyTransactions(block) then print("invalid transactions") return false end
     return true
 end
 
