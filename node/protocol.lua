@@ -119,9 +119,9 @@ function verifyBlock(block)
     
     local fbago = getPrevChain(block,50)
     if block.target ~= getNextDifficulty(fbago,block) then return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then print("invalid pow") return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
     
-    if not verifyTransactions(block) then print("invalid transactions") return false end
+    if not verifyTransactions(block) then return false end
     return true
 end
 
@@ -137,10 +137,10 @@ function verifyTmpBlock(block, blocks)
     end
     
     local fbago = getPrevList(block,blocks,50)
-    if block.target ~= getNextDifficulty(fbago,block) then return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
+    if block.target ~= getNextDifficulty(fbago,block) then print("invalid difficulty") return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then print("invalid pow") return false end
     
-    if not verifyTransactions(block, true) then return false end
+    if not verifyTransactions(block, true) then print("invalid transactions") return false end
     return true
 end
 
@@ -178,6 +178,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     for k=0,lastblock.height do
         local block = getPrevList(lastblock,newblocks,lastblock.height-k)
         if not verifyTmpBlock(block,newblocks) then
+            print("invalid block")
             storage.discardtmputxo()
             return false
         end
