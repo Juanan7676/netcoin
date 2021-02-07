@@ -36,7 +36,7 @@ function cache.saveNodes()
 end
 
 function getNextDifficulty(fbago,block)
-    if block.height==0 then return tonumber((2^240).."") end -- Difficulty for genesis block
+    if block.height==0 then return tonumber((2^250).."") end -- Difficulty for genesis block
     if block.height%50 ~= 0 or block.height==0 then return block.target end
     
     local timeDiff = (block.timestamp - fbago.timestamp)*1000/60/60/20
