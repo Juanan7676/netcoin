@@ -107,7 +107,9 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
                 repeat
                     nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
                     _,_,msg = napi.listentoclient(modem,cache.myPort,clientIP,2)
-                    if msg~=nil then msg = explode("####",msg) end
+                    if msg~=nil then msg = explode("####",msg) 
+                    else return false end
+                    end
                     tries = tries + 1
                 until msg[1] ~= "OK" and tries < 5
                 if tries >= 5 then return false end
