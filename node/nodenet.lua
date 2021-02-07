@@ -104,7 +104,7 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
             while chain.uuid ~= recv.uuid do
                 local tries = 0
                 repeat
-                nodenet.sendClient("GETBLOCK,"..(recv.previous))
+                nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv.previous))
                 local _,_,msg = napi.listentoclient(modem,clientIP)
                 msg = explode("####",msg)
                 tries = tries + 1
@@ -124,7 +124,7 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             end
-    return false end
+    return false
 end
 
 return nodenet
