@@ -85,14 +85,16 @@ function getPrevChain(block, n)
 end
 
 function getPrevList(block, blocks, n)
+    if (n==0) then return block end
     local fbago = block
-        for k=1,n do
-            fbago = blocks[k+1]
-            if fbago==nil then fbago = storage.loadBlock(fbago.previous)
+    for k=1,n do
+        fbago = blocks[k+1]
+        if fbago==nil then
             if fbago.height==0 and k < n then return nil end
-        end
-        return fbago
+            fbago = storage.loadBlock(fbago.previous) 
+         end
     end
+    return fbago
 end
 
 function verifyTransactions(block, tmp)
