@@ -87,7 +87,8 @@ function nodenet.newBlock(clientIP,clientPort,block)
     if cache.getlastBlock()~="error" and block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
     elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     elseif cache.getlastBlock()~="error" and block.previous ~= cache.getlastBlock() then -- We need more blocks!
-        nodenet.newUnknownBlock(clientIP,clientPort,block)
+        local result = nodenet.newUnknownBlock(clientIP,clientPort,block)
+        if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED") end
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
         consolidateBlock(block)
@@ -108,14 +109,14 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
                     nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
                     _,_,msg = napi.listentoclient(modem,cache.myPort,clientIP,2)
                     if msg~=nil then msg = explode("####",msg) 
-                    else return false end
+                    else return false
                     end
                     tries = tries + 1
-                until msg[1] ~= "OK" and tries < 5
+                until msg[1] == "OK" or tries >= 5
                 if tries >= 5 then return false end
                 local recvb = serial.unserialize(msg[2])
-                if recvb.uuid ~= recv.previous then return false end
-                table.insert(recv,recvb)
+                if recvb.uuid ~= recv[#recv].previous then return false end
+                recv[#recv+1] = recvb
                 chain = storage.loadBlock(chain.previous)
             end
             if ((lb.height - lb.height%10) ~= (chain.height - chain.height%10)) or recv[#recv].height==0 then
