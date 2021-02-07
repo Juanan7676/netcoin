@@ -104,19 +104,17 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
             while chain.uuid ~= recv.uuid do
                 local tries = 0
                 repeat
-                nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv.previous),2)
-                local _,_,msg = napi.listentoclient(modem,clientIP)
-                if msg==nil then tries = tries + 1
-                else
-                    msg = explode("####",msg)
+                    nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv.previous),2)
+                    local _,_,msg = napi.listentoclient(modem,clientIP)
+                    if msg==nil then tries = tries + 1
+                    else msg = explode("####",msg) end
                     tries = tries + 1
-                    until msg[1] ~= "OK" and tries < 5
-                    if tries >= 5 then return false end
-                    local recvb = serial.unserialize(msg[2])
-                    if recvb.uuid ~= recv.previous then return false end
-                    table.insert(recv,recvb)
-                    chain = storage.loadBlock(chain.previous)
-                end
+                until msg[1] ~= "OK" and tries < 5
+                if tries >= 5 then return false end
+                local recvb = serial.unserialize(msg[2])
+                if recvb.uuid ~= recv.previous then return false end
+                table.insert(recv,recvb)
+                chain = storage.loadBlock(chain.previous)
             end
             if ((lb.height - lb.height%10) ~= (chain.height - lb.height%10)) then
                 local result = protocol.reconstructUTXOFromCache(recv, block)
