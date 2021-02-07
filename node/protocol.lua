@@ -83,7 +83,7 @@ end
 function getPrevList(block, blocks, n)
     local fbago = block
         for k=1,n do
-            fbago = blocks[fbago.previous]
+            fbago = blocks[k+1]
             if fbago==nil then fbago = storage.loadBlock(fbago.previous)
             if fbago.height==0 and k < n then return nil end
         end
@@ -118,7 +118,7 @@ function verifyBlock(block)
     end
     
     local fbago = getPrevChain(block,50)
-    if block.target ~= getDifficulty(block,fbago) then return false end
+    if block.target ~= getNextDifficulty(fbago,block) then return false end
     if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
     
     if not verifyTransactions(block) then return false end
@@ -137,7 +137,7 @@ function verifyTmpBlock(block, blocks)
     end
     
     local fbago = getPrevList(block,blocks,50)
-    if block.target ~= getDifficulty(block,fbago) then return false end
+    if block.target ~= getNextDifficulty(fbago,block) then return false end
     if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
     
     if not verifyTransactions(block, true) then return false end

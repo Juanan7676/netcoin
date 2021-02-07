@@ -1,9 +1,8 @@
-local protocol = require("protocol")
+require("protocol")
 local storage = require("storage")
 local napi = require("netcraftAPI")
 local component = require("component")
 local serial = require("serialization")
-require("protocol")
 local modem = component.modem
 require("common")
 
@@ -120,11 +119,11 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
                 chain = storage.loadBlock(chain.previous)
             end
             if ((lb.height - lb.height%10) ~= (chain.height - chain.height%10)) or recv[#recv].height==0 then
-                local result = protocol.reconstructUTXOFromZero(recv, block)
+                local result = reconstructUTXOFromZero(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCKS")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             else
-                local result = protocol.reconstructUTXOFromCache(recv, block)
+                local result = reconstructUTXOFromCache(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             end
