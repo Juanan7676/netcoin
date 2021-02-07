@@ -93,7 +93,7 @@ end
 
 function verifyTransactions(block, tmp)
     local genFound = false
-    for _,v in ipairs(block.transactions) do
+    for _,v in ipairs(serial.unserialize(block.transactions)) do
         if (tmp==nil) then result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
         else result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent) end
         if result==false then return false end
@@ -119,7 +119,7 @@ function verifyBlock(block)
     
     local fbago = getPrevChain(block,50)
     if block.target ~= getNextDifficulty(fbago,block) then return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then return false end
     
     if not verifyTransactions(block) then return false end
     return true
@@ -138,14 +138,14 @@ function verifyTmpBlock(block, blocks)
     
     local fbago = getPrevList(block,blocks,50)
     if block.target ~= getNextDifficulty(fbago,block) then print("invalid difficulty") return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. serial.serialize(block.transactions))),16) > block.target then print("invalid pow") return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block, true) then print("invalid transactions") return false end
     return true
 end
 
 function updateutxo(block)
-for _,t in ipairs(block.transactions) do -- update UTXO list
+for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
                 if s.from==t.from then storage.removeremutxo(s.id)
@@ -157,7 +157,7 @@ for _,t in ipairs(block.transactions) do -- update UTXO list
 end
 
 function updatetmputxo(block)
-for _,t in ipairs(block.transactions) do -- update UTXO list
+for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
                 if s.from==t.from then storage.tmpremoveremutxo(s.id)
