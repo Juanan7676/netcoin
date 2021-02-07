@@ -53,7 +53,11 @@ end
 
 function verifyTransaction(t, up, rup)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
-    if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem, data.deserializeKey(t.from,"ec-public"), t.sig) then print("invalid signature") return false end
+    if #t.sources > 0 then
+        local pk = data.deserializeKey(t.from,"ec-public")
+        if pk==nil then print("invalid public key") return false end
+        if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem,pk, t.sig)  then print("invalid signature") return false end
+    end
     
     if (#t.sources == 0) then return "gen" end
     local inputSum = 0
