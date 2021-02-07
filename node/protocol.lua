@@ -88,11 +88,14 @@ function getPrevList(block, blocks, n)
     if (n==0) then return block end
     local fbago = block
     for k=1,n do
-        fbago = blocks[k+1]
-        if fbago==nil then
+        local tmp = blocks[k+1]
+        if tmp==nil then
+            fbago = storage.loadBlock(fbago.previous)
+            if fbago==nil then return nil end
             if fbago.height==0 and k < n then return nil end
-            fbago = storage.loadBlock(fbago.previous) 
-         end
+        else
+            fbago = tmp
+        end
     end
     return fbago
 end
