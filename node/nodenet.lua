@@ -101,7 +101,7 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
     local lb = storage.loadBlock(cache.getlastBlock())
             local chain = lb
             local recv = {block}
-            while chain.uuid ~= recv.uuid do
+            while chain.uuid ~= recv[#recv].uuid and recv[#recv].height~=0 do
                 local tries = 0
                 repeat
                     nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
@@ -116,12 +116,12 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
                 table.insert(recv,recvb)
                 chain = storage.loadBlock(chain.previous)
             end
-            if ((lb.height - lb.height%10) ~= (chain.height - lb.height%10)) then
-                local result = protocol.reconstructUTXOFromCache(recv, block)
+            if ((lb.height - lb.height%10) ~= (chain.height - chain.height%10)) or recv[#recv].height==0 then
+                local result = protocol.reconstructUTXOFromZero(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCKS")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             else
-                local result = protocol.reconstructUTXOFromZero(recv, block)
+                local result = protocol.reconstructUTXOFromCache(recv, block)
                 if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
                 else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
             end
