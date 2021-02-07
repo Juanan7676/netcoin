@@ -104,8 +104,8 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
             while chain.uuid ~= recv.uuid do
                 local tries = 0
                 repeat
-                    nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv.previous),2)
-                    local _,_,msg = napi.listentoclient(modem,clientIP)
+                    nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
+                    local _,_,msg = napi.listentoclient(modem,cache.myPort,clientIP,2)
                     if msg==nil then tries = tries + 1
                     else msg = explode("####",msg) end
                     tries = tries + 1
