@@ -193,7 +193,11 @@ function reconstructUTXOFromZero(newblocks, lastblock)
         end
         updatetmputxo(block)
     end
+    for _,b in newblocks do
+        storage.saveBlock(b)
+    end
     storage.consolidatetmputxo()
+    cache.setlastBlock(lastblock.uuid)
     return true
 end
 
@@ -208,6 +212,9 @@ function reconstructUTXOFromCache(newblocks, lastblock)
             return false
         end
         updatetmputxo(block)
+    end
+    for _,b in newblocks do
+        storage.saveBlock(b)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
