@@ -7,6 +7,7 @@ filesys = require("filesystem")
 cache = {}
 cache.lb = "error"
 cache.nodes = {}
+cache.contacts = {}
 function cache.getlastBlock()
     return cache.lb
 end
@@ -34,6 +35,16 @@ function cache.saveNodes()
     file:write(serial.serialize(cache.nodes))
     file:close()
 end
+function cache.loadContacts()
+    local file = io.open("contacts.txt","r")
+    cache.contacts = serial.unserialize(file:read("*a"))
+    file:close()
+end
+function cache.saveContacts()
+    local file = io.open("contacts.txt","w")
+    file:write(serial.serialize(cache.contacts))
+    file:close()
+end
 
 function getNextDifficulty(fbago,block)
     if block.height==0 then return tonumber((2^250).."") end -- Difficulty for genesis block
@@ -51,8 +62,23 @@ function getReward(height)
     return math.floor(50000000 / 2^halvings)
 end
 
-function verifyTransaction(t, up, rup)
+function getTransactionFromBlock(block,uid)
+    for _,t in ipairs(block.transactions) do
+        if t.id == uid then return t end
+    end
+    return nil
+end
+
+function searchBlockInList(list,uid)
+    for _,b in pairs(list) do
+        if b.id==uid then return b end
+    end
+    return nil
+end
+
+function verifyTransaction(t, up, rup, newBlocks)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
+    if t.qty <= 0 or t.rem < 0 then print("invalid qty or rem") return false end
     if #t.sources > 0 then
         local pk = data.deserializeKey(t.from,"ec-public")
         if pk==nil then print("invalid public key") return false end
@@ -62,16 +88,42 @@ function verifyTransaction(t, up, rup)
     if (#t.sources == 0) then return "gen" end
     local inputSum = 0
     for _,v in ipairs(t.sources) do
-        if v.from == t.from then --This is a remainder
-            if not up(v.id) then print("remainder not found") return false end
-            inputSum = inputSum + v.rem
-        else -- This is a normal transaction
-            if not rup(v.id) then print("source not found") return false end
-            if v.to ~= t.from then print("source not matches") return false end
-            inputSum = inputSum + v.qty
+        local trans, block
+        local rem = false
+        local utxoblock = up(v)
+        if utxoblock ~= nil then
+            block = storage.loadBlock(utxoblock)
+            if block==nil then
+                if newBlocks==nil then print("stored utxo block not found on chain") return false end
+                block = searchBlockInList(newBlocks,utxoblock)
+                if block==nil then print("could not find utxo block on list") return false end
+            end
+        else
+            remutxoblock = rup(v)
+            if remutxoblock==nil then print("uxto not found") return false 
+            else
+                block = storage.loadBlock(remutxoblock)
+                if block==nil then
+                    if newBlocks==nil then print("stored utxo block not found on chain") return false end
+                    block = searchBlockInList(newBlocks,remutxoblock)
+                    if block==nil then print("could not find utxo block on list") return false end
+                end
+                rem = true
+            end
+        end
+        
+        trans = getTransactionFromBlock(block,v)
+        if trans==nil then print("transaction not found on block") return false end
+        
+        if trans.from == t.from and rem then --This is a remainder
+            inputSum = inputSum + trans.rem
+        elseif not rem -- This is a normal transaction
+            if trans.to ~= t.from then print("source not matches") return false end
+            inputSum = inputSum + trans.qty
+        else print("treating a remainder as a normal trans or viceversa") return false
         end
     end
-    if inputSum ~= t.qty + t.rem then return false end
+    if inputSum ~= t.qty + t.rem then print("amounts IN and OUT do not match") return false end
     return true
 end
 
@@ -100,11 +152,11 @@ function getPrevList(block, blocks, n)
     return fbago
 end
 
-function verifyTransactions(block, tmp)
+function verifyTransactions(block, tmp, blocks)
     local genFound = false
     for _,v in ipairs(serial.unserialize(block.transactions)) do
         if (tmp==nil) then result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
-        else result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent) end
+        else result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent, blocks) end
         if result==false then return false end
         if result=="gen" then
             if v.qty ~= getReward(block.height) then return false end
@@ -149,7 +201,7 @@ function verifyTmpBlock(block, blocks)
     if block.target ~= getNextDifficulty(fbago,block) then print("invalid difficulty") return false end
     if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
     
-    if not verifyTransactions(block, true) then print("invalid transactions") return false end
+    if not verifyTransactions(block, true, blocks) then print("invalid transactions") return false end
     return true
 end
 
@@ -157,11 +209,20 @@ function updateutxo(block)
 for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
-                if s.from==t.from then storage.removeremutxo(s.id)
-                else storage.removeutxo(s.id) end
+                if s.from==t.from then 
+                    storage.removeremutxo(s.id)
+                    if (t.from==walletPK.serialize()) then storage.removewalletremutxo(s.id) end
+                else 
+                    storage.removeutxo(s.id)
+                    if (t.from==walletPK.serialize()) then storage.removewalletutxo(s.id) end
+                end
             end
         end
         storage.saveutxo(t.id)
+        if (t.rem>0) then storage.saveremutxo(t.id) end
+        
+        if (t.to==walletPK.serialize() and t.qty>0) then storage.savewalletutxo(t.id) end
+        if (t.from==walletPK.serialize() and t.rem>0) then storage.savewalletremutxo(t.id) end
     end
 end
 
@@ -169,11 +230,20 @@ function updatetmputxo(block)
 for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
-                if s.from==t.from then storage.tmpremoveremutxo(s.id)
-                else storage.tmpremoveutxo(s.id) end
+                if s.from==t.from then 
+                    storage.tmpremoveremutxo(s.id)
+                    if (t.from==walletPK.serialize()) then storage.tmpremovewalletremutxo(s.id) end
+                else
+                    if (t.from==walletPK.serialize()) then storage.tmpremovewalletutxo(s.id) end
+                    storage.tmpremoveutxo(s.id) 
+                end
             end
         end
         storage.tmpsaveutxo(t.id)
+        if (t.rem>0) then storage.tmpsaveremutxo(t.id) end
+        
+        if (t.to==walletPK.serialize() and t.qty>0) then storage.tmpsavewalletutxo(t.id) end
+        if (t.from==walletPK.serialize() and t.rem>0) then storage.tmpsavewalletremutxo(t.id) end
     end
 end
 
@@ -193,7 +263,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
         end
         updatetmputxo(block)
     end
-    for _,b in newblocks do
+    for _,b in ipairs(newblocks) do
         storage.saveBlock(b)
     end
     storage.consolidatetmputxo()
@@ -213,7 +283,7 @@ function reconstructUTXOFromCache(newblocks, lastblock)
         end
         updatetmputxo(block)
     end
-    for _,b in newblocks do
+    for _,b in ipairs(newblocks) do
         storage.saveBlock(b)
     end
     storage.consolidatetmputxo()

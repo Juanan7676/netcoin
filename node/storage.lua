@@ -116,23 +116,43 @@ function storage.saveBlock(block)
     return nil
 end
 
-function storage.tmpsaveutxo(uuid) storage.saveutxo(uuid,true) end
-function storage.saveutxo(uuid, tmp)
+function storage.tmpsaveutxo(uuid,buuid) storage.saveutxo(uuid,buuid,true) end
+function storage.saveutxo(uuid, buuid, tmp)
     local prefix = ""
     if tmp==true then prefix="tmp" end
 
     local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt","a")
-    file:write(uuid.."\n")
+    file:write(uuid..","..buuid.."\n")
     file:close()
 end
 
-function storage.tmpsaveremutxo(uuid) storage.saveremutxo(uuid,true) end
-function storage.saveremutxo(uuid, tmp)
+function storage.tmpsavewalletutxo(uuid,buuid) storage.savewalletutxo(uuid,buuid,true) end
+function storage.savewalletutxo(uuid, buuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt","a")
+    file:write(uuid..","..buuid.."\n")
+    file:close()
+end
+
+function storage.tmpsaveremutxo(uuid,buuid) storage.saveremutxo(uuid,buuid,true) end
+function storage.saveremutxo(uuid, buuid, tmp)
     local prefix = ""
     if tmp==true then prefix="tmp" end
 
     local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt","a")
-    file:write(uuid.."\n")
+    file:write(uuid..","..buuid.."\n")
+    file:close()
+end
+
+function storage.tmpsavewalletremutxo(uuid,buuid) storage.savewalletremutxo(uuid,buuid,true) end
+function storage.savewalletremutxo(uuid, buuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo.txt","a")
+    file:write(uuid..","..buuid.."\n")
     file:close()
 end
 
@@ -144,7 +164,8 @@ function storage.utxopresent(uuid, tmp)
     local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt","r")
     local line = file:read()
     while line ~= nil do
-        if line==uuid then return true end
+        local arr = explode(",",line)
+        if arr[1]==uuid then return arr[2] end
     end
     return false
 end
@@ -157,7 +178,8 @@ function storage.remutxopresent(uuid, tmp)
     local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt","r")
     local line = file:read()
     while line ~= nil do
-        if line==uuid then return true end
+        local arr = explode(",",line)
+        if arr[1]==uuid then return arr[2] end
     end
     return false
 end
@@ -171,12 +193,29 @@ function storage.removeutxo(uuid, tmp)
     local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo2.txt","w")
     local line = file:read()
     while line ~= nil do
-        if line~=uuid then newfile:write(line.."\n") end
+        if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
     end
     file:close()
     newfile:close()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
     filesys.rename("/mnt/"..(storage.utxoDisk).."/utxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
+end
+
+function storage.tmpremovewalletutxo(uuid) storage.removewalletutxo(uuid,true) end
+function storage.removewalletutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+    
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt","r")
+    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo2.txt","w")
+    local line = file:read()
+    while line ~= nil do
+        if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+    end
+    file:close()
+    newfile:close()
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/walletutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt")
 end
 
 function storage.tmpremoveremutxo(uuid) storage.removeremutxo(uuid,true) end
@@ -188,7 +227,7 @@ function storage.removeremutxo(uuid, tmp)
     local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo2.txt","w")
     local line = file:read()
     while line ~= nil do
-        if line~=uuid then newfile:write(line.."\n") end
+        if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
     end
     file:close()
     newfile:close()
@@ -196,9 +235,28 @@ function storage.removeremutxo(uuid, tmp)
     filesys.rename("/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."remutxo.txt")
 end
 
+function storage.tmpremovewalletremutxo(uuid) storage.removewalletremutxo(uuid,true) end
+function storage.removewalletremutxo(uuid, tmp)
+    local prefix = ""
+    if tmp==true then prefix="tmp" end
+    
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo.txt","r")
+    local newfile = io.open("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo2.txt","w")
+    local line = file:read()
+    while line ~= nil do
+        if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+    end
+    file:close()
+    newfile:close()
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."walletremutxo.txt")
+end
+
 function storage.discardtmputxo()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/tmputxo.txt")
     filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpwalletutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpwalletremutxo.txt")
 end
 
 function storage.consolidatetmputxo()
@@ -206,9 +264,15 @@ function storage.consolidatetmputxo()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo.txt")
     filesys.copy("/mnt/"..(storage.utxoDisk).."/tmputxo.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
     filesys.copy("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
-    
     filesys.remove("/mnt/"..(storage.utxoDisk).."/tmputxo.txt")
     filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt")
+    
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/tmpwalletutxo.txt","/mnt/"..(storage.utxoDisk).."/walletutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/tmpwalletremutxo.txt","/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpwalletutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/tmpwalletremutxo.txt")
 end
 
 function storage.cacheutxo()
@@ -216,6 +280,11 @@ function storage.cacheutxo()
     filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo.txt","/mnt/"..(storage.utxoDisk).."/utxo_cached.txt")
     filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt")
     filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo.txt","/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt")
+    
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletutxo_cached.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletutxo.txt","/mnt/"..(storage.utxoDisk).."/walletutxo_cached.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletremutxo.txt","/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt")
 end
 
 function storage.restoreutxo()
@@ -223,6 +292,11 @@ function storage.restoreutxo()
     filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo_cached.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
     filesys.remove("/mnt/"..(storage.utxoDisk).."/remutxo.txt")
     filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
+    
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/walletutxo.txt")
+    filesys.remove("/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
 end
 
 return storage

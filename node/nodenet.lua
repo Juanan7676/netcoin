@@ -12,6 +12,108 @@ function nodenet.sendClient(c,p,msg)
     modem.send(c,p,cache.myPort,msg)
 end
 
+function nodenet.reloadWallet()
+    local file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
+    local line = file:read()
+    cache.lt = {}
+    cache.pt = {}
+    cache.cb = 0
+    cache.tb = 0
+    
+    while line ~= nil do
+        local parsed = explode(",",line)
+        local t = getTransactionFromBlock(parsed[2],parsed[1])
+        if (t~=nil) then
+            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            if (diff >= 3) then
+                if (#cache.lt < 5) cache.lt[#cache.lt+1] = t
+                cache.cb = cache.cb + t.qty
+                cache.tb = cache.tb + t.qty
+            else
+                cache.pt[#cache.pt+1] = {t,diff}
+                cache.tb = cache.tb + t.qty
+            end
+        end
+        line = file:read()
+    end
+    file:close()
+    file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    while line ~= nil do
+        local parsed = explode(",",line)
+        local t = getTransactionFromBlock(parsed[2],parsed[1])
+        if (t~=nil) then
+            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            if (diff >= 3) then
+                if (#cache.lt < 5) cache.lt[#cache.lt+1] = t
+                cache.cb = cache.cb + t.rem
+                cache.tb = cache.tb + t.rem
+            else
+                cache.pt[#cache.pt+1] = {t,diff}
+                cache.tb = cache.tb + t.rem
+            end
+        end
+        line = file:read()
+    end
+    updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
+end
+
+function nodenet.confectionateTransaction(to, qty)
+    if (qty>cache.cb) then return nil end
+    local t = {}
+    t.id = randomUUID(16)
+    t.from = cache.walletPK.serialize()
+    t.to = to
+    t.qty = qty
+    t.sources = {}
+    local totalIN=0
+    
+    local file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    while line ~= nil do
+        local parsed = explode(",",line)
+        local source = getTransactionFromBlock(parsed[2],parsed[1])
+        if (source~=nil) then
+            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            if (diff >= 3) then
+                totalIN = totalIN + source.rem
+                table.insert(t.sources,source.id)
+                if (totalIN >= qty) then break end
+            end
+        end
+        line = file:read()
+    end
+    file:close()
+    
+    if totalIN >= qty then
+        t.rem = totalIN - qty
+        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem, cache.walletSK)
+        return t
+    end
+    
+    file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
+    while line ~= nil do
+        local parsed = explode(",",line)
+        local source = getTransactionFromBlock(parsed[2],parsed[1])
+        if (source~=nil) then
+            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            if (diff >= 3) then
+                totalIN = totalIN + source.qty
+                table.insert(t.sources,source.id)
+                if (totalIN >= qty) then break end
+            end
+        end
+        line = file:read()
+    end
+    file:close()
+    
+    if totalIN >= qty then
+        t.rem = totalIN - qty
+        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem, cache.walletSK)
+        return t
+    end
+    
+    return nil end
+end
+
 function nodenet.sync()
     -- Update node list
     for _,client in pairs(cache.nodes) do
@@ -58,6 +160,7 @@ function nodenet.dispatchNetwork()
             for _,client in pairs(cache.nodes) do
                 nodenet.sendClient(client.ip, client.port, parsed[2])
             end
+            nodenet.reloadWallet()
         end
     elseif parsed[1]=="NEWNODE" then
         local node = parsed[2]
