@@ -18,6 +18,7 @@ cache.tb = 0
 cache.rt = {}
 cache.pt = {}
 cache.loadContacts()
+nodenet.reloadWallet()
 
 thread.create(function()
     while true do
@@ -60,5 +61,7 @@ function processCommand(cmd)
         end
     end
 end
-
-io.read()
+while true do
+    local cmd = io.read()
+    processCommand(cmd)
+end

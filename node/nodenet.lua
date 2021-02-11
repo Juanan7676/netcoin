@@ -54,7 +54,7 @@ function nodenet.reloadWallet()
         end
         line = file:read()
     end
-    updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
+    wallet.updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
 end
 
 function nodenet.confectionateTransaction(to, qty)

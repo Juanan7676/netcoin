@@ -1,6 +1,6 @@
 component = require("component")
 
-cfg = rquire("config")
+cfg = require("config")
 gpu = component.proxy(cfg.gpu)
 gpu.bind(cfg.scr)
 data = component.data
@@ -9,8 +9,7 @@ data = component.data
 -- [negro(1),blanco(2),rojo(3),verde(4),azul(5),amarillo(6),purpura(7)]
 paleta = {0x000000,0xFFFFFF,0xFF0000,0x00FF00,0x0000FF,0xFFFF00,0xFF00FF}
 for k,v in ipairs(paleta) do
-	gpu1.setPaletteColor(k,v)
-	if gpu2 ~= nil then gpu2.setPaletteColor(k,v) end
+	gpu.setPaletteColor(k,v)
 end
 w1,h1 = gpu.getResolution()
 
@@ -45,6 +44,7 @@ function printTransaction(gpu,x,y,t)
 end
 
 function updateScreen(cb,tb,rt,pt)
+    gpu.fill(0,0,w1,h1," ")
     text(gpu,1,1,2,"Confirmed balance")
     text(gpu,1,2,4,cb/1000000 .. " NTC")
     text(gpu,1,4,2,"Total balance")
