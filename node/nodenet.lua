@@ -26,7 +26,7 @@ function nodenet.reloadWallet()
         if (t~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
-                if (#cache.lt < 5) cache.lt[#cache.lt+1] = t
+                if (#cache.lt < 5) then cache.lt[#cache.lt+1] = t end
                 cache.cb = cache.cb + t.qty
                 cache.tb = cache.tb + t.qty
             else
@@ -44,7 +44,7 @@ function nodenet.reloadWallet()
         if (t~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
-                if (#cache.lt < 5) cache.lt[#cache.lt+1] = t
+                if (#cache.lt < 5) then cache.lt[#cache.lt+1] = t end
                 cache.cb = cache.cb + t.rem
                 cache.tb = cache.tb + t.rem
             else
@@ -111,7 +111,7 @@ function nodenet.confectionateTransaction(to, qty)
         return t
     end
     
-    return nil end
+    return nil
 end
 
 function nodenet.sync()

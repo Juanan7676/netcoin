@@ -117,7 +117,7 @@ function verifyTransaction(t, up, rup, newBlocks)
         
         if trans.from == t.from and rem then --This is a remainder
             inputSum = inputSum + trans.rem
-        elseif not rem -- This is a normal transaction
+        elseif not rem then -- This is a normal transaction
             if trans.to ~= t.from then print("source not matches") return false end
             inputSum = inputSum + trans.qty
         else print("treating a remainder as a normal trans or viceversa") return false
