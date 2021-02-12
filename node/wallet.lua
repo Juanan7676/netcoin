@@ -48,14 +48,14 @@ function updateScreen(cb,tb,rt,pt)
     text(gpu,1,1,2,"Confirmed balance")
     text(gpu,1,2,4,cb/1000000 .. " NTC")
     text(gpu,1,4,2,"Total balance")
-    text(gpu,1,2,6,tb/1000000 .. " NTC")
+    text(gpu,1,5,6,tb/1000000 .. " NTC")
     
-    text(gpu,w1-25,1,"Recent transactions")
+    text(gpu,w1-25,1,2,"Recent transactions")
     for k,v in ipairs(rt) do
         printTransaction(gpu,w1-40,k+1,v)
     end
     
-    text(gpu,1,4,2,"Pending transactions ("..#pt..")")
+    text(gpu,1,7,2,"Pending transactions ("..#pt..")")
     for k,v in ipairs(rt) do
         printTransaction(gpu,w1-40,k+1,v)
     end

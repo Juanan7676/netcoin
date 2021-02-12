@@ -59,6 +59,9 @@ function processCommand(cmd)
             nodenet.confectionateTransaction(address,qty)
             print("Transaction was completed successfully. You need to wait a few minutes for the transaction to be processed by miners and appear on the network. This process takes usually around 5 minutes.")
         end
+    elseif parsed[1]=="myaddress" then
+        print("Here's your NTC address:")
+        print(tohex(cache.walletPK.serialize()))
     end
 end
 while true do
