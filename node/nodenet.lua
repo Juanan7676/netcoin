@@ -200,7 +200,7 @@ function nodenet.dispatchNetwork()
             end
         end
     elseif parsed[1]=="PING" then
-        nodenet.sendClient(clientIP,clientPort,"PONG!"..serial.serialize(block))
+        nodenet.sendClient(clientIP,clientPort,"PONG!")
     end
 end
 
