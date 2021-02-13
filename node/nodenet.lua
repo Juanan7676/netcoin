@@ -38,7 +38,7 @@ function nodenet.reloadWallet()
     
     while line ~= nil do
         local parsed = explode(",",line)
-        local t = getTransactionFromBlock(parsed[2],parsed[1])
+        local t = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
         if (t~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
@@ -56,7 +56,7 @@ function nodenet.reloadWallet()
     file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
     while line ~= nil do
         local parsed = explode(",",line)
-        local t = getTransactionFromBlock(parsed[2],parsed[1])
+        local t = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
         if (t~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
@@ -86,7 +86,7 @@ function nodenet.confectionateTransaction(to, qty)
     local file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
     while line ~= nil do
         local parsed = explode(",",line)
-        local source = getTransactionFromBlock(parsed[2],parsed[1])
+        local source = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
         if (source~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
@@ -108,7 +108,7 @@ function nodenet.confectionateTransaction(to, qty)
     file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
     while line ~= nil do
         local parsed = explode(",",line)
-        local source = getTransactionFromBlock(parsed[2],parsed[1])
+        local source = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
         if (source~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
