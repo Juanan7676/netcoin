@@ -77,7 +77,7 @@ function processCommand(cmd)
     elseif parsed[1]=="addNode" then
         if #parsed ~= 3 then print("Usage: addNode <IP> <port>")
         else
-            local res = nodenet.connectClient(parsed[2],parsed[3])
+            local res = nodenet.connectClient(parsed[2],tonumber(parsed[3]))
             if res == nil then print("Could not connect to client, check client is online and ip/port is OK!")
             else print("Node added succesfully and synced") end
         end
