@@ -178,7 +178,7 @@ function nodenet.dispatchNetwork()
         local result = nodenet.newBlock(clientIP,clientPort,block)
         if result==true then
             for _,client in pairs(cache.nodes) do
-                nodenet.sendClient(client.ip, client.port, parsed[2])
+                nodenet.sendClient(client.ip, client.port, "NEWBLOCK####"..parsed[2])
             end
             nodenet.reloadWallet()
         end
@@ -216,6 +216,7 @@ function nodenet.newBlock(clientIP,clientPort,block)
         if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED") end
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
+        print("Consolidating block...")
         consolidateBlock(block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")

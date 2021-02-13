@@ -52,8 +52,8 @@ function printTransaction(gpu,x,y,t,conf)
     if t.from ~= cache.walletPK.serialize() then from = string.sub(t.from,1,6) .. "..." end
     if t.to ~= cache.walletPK.serialize() then to = string.sub(t.to,1,6) .. "..." end
     
-    if (conf==nil) then text(gpu,x,y,1,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
-    else text(gpu,x,y,1,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC  " .. conf .. " confirmations")
+    if (conf==nil) then text(gpu,x,y,7,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
+    else text(gpu,x,y,7,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC  " .. conf .. " confirmations")
     end
 end
 
