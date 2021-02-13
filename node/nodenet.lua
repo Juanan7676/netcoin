@@ -12,6 +12,17 @@ function nodenet.sendClient(c,p,msg)
     modem.send(c,p,cache.myPort,msg)
 end
 
+function nodenet.connectClient(c,p)
+    nodenet.sendClient(c,p,"PING")
+    local _,_,rp = napi.listentoclient(modem,cache.myPort,c,2)
+    if (rp==nil) then return nil
+    else if (rp=="PONG!")then
+        nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####" .. false)
+    end
+    nodenet.sync()
+    return true
+end
+
 function nodenet.reloadWallet()
     local file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
     local line = file:read()
@@ -181,6 +192,8 @@ function nodenet.dispatchNetwork()
                 nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
             end
         end
+    elseif parsed[1]=="PING" then
+        nodenet.sendClient(clientIP,clientPort,"PONG!"..serial.serialize(block))
     end
 end
 

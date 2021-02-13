@@ -32,7 +32,7 @@ function processCommand(cmd)
         if #parsed ~= 3 then print("Usage: add <contactName> <PKfile>")
         else
             local contact = parsed[2]
-            local file = io.read(parsed[3],"r")
+            local file = io.open(parsed[3],"r")
             if file==nil then print("Could not find file") return end
             cache.contacts[contact] = file:read("*a")
             cache.saveContacts()
@@ -57,16 +57,29 @@ function processCommand(cmd)
             local address = cache.contacts[parsed[2]]
             if address==nil then print("Contact not found!") return false end
             local qty = tonumber(parsed[3])
-            nodenet.confectionateTransaction(address,qty)
-            print("Transaction was completed successfully. You need to wait a few minutes for the transaction to be processed by miners and appear on the network. This process takes usually around 5 minutes.")
+            local tr = nodenet.confectionateTransaction(address,qty)
+            if (tr==nil) then print("Could not make transaction! Maybe you tried to spend more funds than you have?")
+            else
+                for k,v in pairs(cache.nodes) do
+                    nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
+                end
+                print("Transaction was completed successfully. You need to wait a few minutes for the transaction to be processed by miners and appear on the network. This process takes usually around 5 minutes.")
+            end
         end
     elseif parsed[1]=="export" then
         if #parsed ~= 2 then print("Usage: export <PKfile>")
         else
             local contact = parsed[2]
-            local file = io.read(parsed[3],"w")
+            local file = io.open(parsed[3],"w")
             file:write(cache.walletPK.serialize())
             print("Public node key successfully exported")
+        end
+    elseif parsed[1]=="addNode" then
+        if #parsed ~= 3 then print("Usage: addNode <IP> <port>")
+        else
+            local res = nodenet.connectClient(parsed[2],parsed[3])
+            if res == nil then print("Could not connect to client, check client is online and ip/port is OK!")
+            else print("Node added succesfully and synced") end
         end
     end
 end
