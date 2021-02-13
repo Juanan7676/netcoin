@@ -211,7 +211,7 @@ function nodenet.newBlock(clientIP,clientPort,block)
     if not block or not block.height then return false end
     if cache.getlastBlock()~="error" and block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
     elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
-    elseif cache.getlastBlock()~="error" and block.previous ~= cache.getlastBlock() then -- We need more blocks!
+    elseif block.previous ~= cache.getlastBlock() then -- We need more blocks!
         local result = nodenet.newUnknownBlock(clientIP,clientPort,block)
         if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED") end
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
