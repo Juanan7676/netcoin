@@ -299,6 +299,24 @@ function storage.restoreutxo()
     filesys.copy("/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
 end
 
+function storage.setuptmpenvutxo()
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/tmpwalletutxo.txt","w")
+    file:close()
+    file = io.open("/mnt/"..(storage.utxoDisk).."/tmpwalletremutxo.txt","w")
+    file:close()
+    file = io.open("/mnt/"..(storage.utxoDisk).."/tmputxo.txt","w")
+    file:close()
+    file = io.open("/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt","w")
+    file:close()
+end
+
+function storage.setuptmpenvutxo_cache()
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo_cached.txt","/mnt/"..(storage.utxoDisk).."/tmputxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/tmpremutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/tmpwalletutxo.txt")
+    filesys.copy("/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/tmpwalletremutxo.txt")
+end
+
 function storage.generateutxo()
     local file = io.open("/mnt/"..(storage.utxoDisk).."/utxo.txt","w")
     file:close()

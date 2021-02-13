@@ -254,6 +254,7 @@ function consolidateBlock(block)
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
+    storage.setuptmpenvutxo()
     for k=0,lastblock.height do
         local block = getPrevList(lastblock,newblocks,lastblock.height-k)
         if not verifyTmpBlock(block,newblocks) then
@@ -272,9 +273,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
 end
 
 function reconstructUTXOFromCache(newblocks, lastblock)
-    filesys.copy("/mnt/"..(storage.utxoDisk).."/utxo_cached.txt","/mnt/"..(storage.utxoDisk).."/utxo.txt")
-    filesys.copy("/mnt/"..(storage.utxoDisk).."/remutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/remutxo.txt")
-    
+    storage.setuptmpenvutxo_cache()
     for k=lastblock.height - lastblock.height%10,lastblock.height do
         local block = getPrevList(lastblock,newblocks,lastblock.height-k)
         if not verifyTmpBlock(block,newblocks) then
