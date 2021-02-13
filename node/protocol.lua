@@ -231,7 +231,7 @@ for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if (t.rem>0) then storage.saveremutxo(t.id) end
         
         if (t.to==cache.walletPK.serialize() and t.qty>0) then storage.savewalletutxo(t.id, block.uuid) end
-        if (t.from==walletPK.serialize() and t.rem>0) then storage.savewalletremutxo(t.id, block.uuid) end
+        if (t.from==cache.walletPK.serialize() and t.rem>0) then storage.savewalletremutxo(t.id, block.uuid) end
     end
 end
 
