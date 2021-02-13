@@ -18,8 +18,13 @@ function nodenet.connectClient(c,p)
     if (rp==nil) then return nil
     elseif (rp=="PONG!") then
         nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####" .. false)
+        cache[c] = {}
+        cache[c].ip = node
+        cache[c].port = p
+        cache[c].miner = false
+        cache.saveNodes()
+        nodenet.sync()
     end
-    nodenet.sync()
     return true
 end
 
@@ -133,9 +138,10 @@ function nodenet.sync()
         if msg~="NOT_IMPLEMENTED" and msg~=nil then
             local parse = explode("####",msg)
             cache[parse[1]] = {}
-            cache[parse[1]].ip = node
-            cache[parse[1]].port = parsed[2]
-            cache[parse[1]].miner = parsed[3]
+            cache[parse[1]].ip = parse[1]
+            cache[parse[1]].port = parse[2]
+            cache[parse[1]].miner = parse[3]
+            cache.saveNodes()
         end
     end
     -- Get last block
@@ -183,6 +189,7 @@ function nodenet.dispatchNetwork()
             cache[node].ip = node
             cache[node].port = parsed[3]
             cache[node].miner = parsed[4]
+            cache.saveNodes()
         end
     elseif parsed[1]=="GET_LAST_BLOCK" then
         nodenet.sendClient(clientIP,clientPort,serial.serialize(storage.loadBlock(cache.getlastBlock())))
