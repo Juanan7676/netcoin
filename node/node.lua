@@ -29,11 +29,12 @@ end)
 function processCommand(cmd)
     local parsed = explode(" ",cmd)
     if parsed[1]=="add" then
-        if #parsed ~= 3 then print("Usage: add <contactName> <address>")
+        if #parsed ~= 3 then print("Usage: add <contactName> <PKfile>")
         else
             local contact = parsed[2]
-            local address = parsed[3]
-            cache.contacts[contact] = fromhex(address)
+            local file = io.read(parsed[3],"r")
+            if file==nil then print("Could not find file") return end
+            cache.contacts[contact] = file:read("*a")
             cache.saveContacts()
             print("Contact " .. contact .. " saved succesfully!")
         end
@@ -59,9 +60,14 @@ function processCommand(cmd)
             nodenet.confectionateTransaction(address,qty)
             print("Transaction was completed successfully. You need to wait a few minutes for the transaction to be processed by miners and appear on the network. This process takes usually around 5 minutes.")
         end
-    elseif parsed[1]=="myaddress" then
-        print("Here's your NTC address:")
-        print(tohex(cache.walletPK.serialize()))
+    elseif parsed[1]=="export" then
+        if #parsed ~= 2 then print("Usage: export <PKfile>")
+        else
+            local contact = parsed[2]
+            local file = io.read(parsed[3],"w")
+            file:write(cache.walletPK.serialize())
+            print("Public node key successfully exported")
+        end
     end
 end
 while true do
