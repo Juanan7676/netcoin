@@ -217,7 +217,7 @@ function nodenet.newBlock(clientIP,clientPort,block)
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
         consolidateBlock(block)
-        print("Added new block with id " .. block.id .. "at height" .. block.height)
+        print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
         return true
     end
