@@ -139,8 +139,17 @@ end
 function getPrevList(block, blocks, n)
     if (n==0) then return block end
     local fbago = block
+    local start = 0
+    for i=1,#blocks do
+        if blocks[i].uuid==block.uuid then 
+            start = i
+            break
+        end
+    end
+    assert(start ~= 0)
+    
     for k=1,n do
-        local tmp = blocks[k+1]
+        local tmp = blocks[k+start]
         if tmp==nil then
             fbago = storage.loadBlock(fbago.previous)
             if fbago==nil then return nil end
@@ -187,14 +196,14 @@ function verifyBlock(block)
 end
 
 function verifyTmpBlock(block, blocks)
-    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then return false end
-    if (#block.uuid ~= 16) then return false end
+    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block"= return false end
+    if (#block.uuid ~= 16) then print("malformed uuid") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevList(block,blocks,1)
-        if prev==nil then return false end
-        if prev.height ~= block.height-1 then return false end
-        if prev.timestamp >= block.timestamp then return false end
+        if prev==nil then print("previous block not found") return false end
+        if prev.height ~= block.height-1 then print("invalid height: prev is " .. prev.uuid .. " height " .. prev.height .. ", block is " .. block.uuid .. " height " .. block.height) return false end
+        if prev.timestamp >= block.timestamp then print("invalid timestamp") return false end
     end
     
     local fbago = getPrevList(block,blocks,50)

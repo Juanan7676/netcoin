@@ -70,7 +70,7 @@ function processCommand(cmd)
         if #parsed ~= 2 then print("Usage: export <PKfile>")
         else
             local contact = parsed[2]
-            local file = io.open(parsed[3],"w")
+            local file = io.open(parsed[2],"w")
             file:write(cache.walletPK.serialize())
             print("Public node key successfully exported")
         end
