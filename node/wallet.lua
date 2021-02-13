@@ -68,7 +68,7 @@ function updateScreen(cb,tb,rt,pt)
     end
     
     text(gpu,1,7,2,"Pending transactions ("..#pt..")")
-    for k,v in ipairs(rt) do
+    for k,v in ipairs(pt) do
         printTransaction(gpu,w1-40,k+1,v)
     end
     
