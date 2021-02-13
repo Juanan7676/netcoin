@@ -40,6 +40,9 @@ function generateWallet()
     storage.generateutxo()
     file = io.open("lb.txt","w")
     file:close()
+    file = io.open("contacts.txt","w")
+    file:write("{}")
+    file:close()
 end
 
 function printTransaction(gpu,x,y,t)
