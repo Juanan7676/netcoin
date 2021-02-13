@@ -19,7 +19,7 @@ function nodenet.connectClient(c,p)
     elseif (rp=="PONG!") then
         nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####0")
         cache.nodes[c] = {}
-        cache.nodes[c].ip = node
+        cache.nodes[c].ip = c
         cache.nodes[c].port = p
         cache.nodes[c].miner = "0"
         cache.saveNodes()
@@ -134,15 +134,18 @@ function nodenet.sync()
     -- Update node list
     for _,client in pairs(cache.nodes) do
         nodenet.sendClient(client.ip, client.port, "GETNODES")
-        local _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
-        if msg~="NOT_IMPLEMENTED" and msg~=nil then
-            local parse = explode("####",msg)
-            cache.nodes[parse[1]] = {}
-            cache.nodes[parse[1]].ip = parse[1]
-            cache.nodes[parse[1]].port = parse[2]
-            cache.nodes[parse[1]].miner = parse[3]
-            cache.saveNodes()
-        end
+        local msg
+        repeat
+            _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
+            if msg~="NOT_IMPLEMENTED" and msg~=nil and msg~="END" then
+                local parse = explode("####",msg)
+                cache.nodes[parse[1]] = {}
+                cache.nodes[parse[1]].ip = parse[1]
+                cache.nodes[parse[1]].port = parse[2]
+                cache.nodes[parse[1]].miner = parse[3]
+                cache.saveNodes()
+            end
+        until msg=="END" or msg==nil or msg=="NOT_IMPLEMENTED"
     end
     -- Get last block
     for _,client in pairs(cache.nodes) do
