@@ -196,7 +196,7 @@ function verifyBlock(block)
 end
 
 function verifyTmpBlock(block, blocks)
-    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block"= return false end
+    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block") return false end
     if (#block.uuid ~= 16) then print("malformed uuid") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
