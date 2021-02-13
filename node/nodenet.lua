@@ -17,11 +17,11 @@ function nodenet.connectClient(c,p)
     local _,_,rp = napi.listentoclient(modem,cache.myPort,c,2)
     if (rp==nil) then return nil
     elseif (rp=="PONG!") then
-        nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####" .. false)
+        nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####0")
         cache.nodes[c] = {}
         cache.nodes[c].ip = node
         cache.nodes[c].port = p
-        cache.nodes[c].miner = false
+        cache.nodes[c].miner = "0"
         cache.saveNodes()
         nodenet.sync()
     end
@@ -195,7 +195,7 @@ function nodenet.dispatchNetwork()
         nodenet.sendClient(clientIP,clientPort,serial.serialize(storage.loadBlock(cache.getlastBlock())))
     elseif parsed[1]=="NEWTRANSACT" then
         for k,v in pairs(cache.nodes) do
-            if v.miner==true then
+            if v.miner=="1" then
                 nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
             end
         end
