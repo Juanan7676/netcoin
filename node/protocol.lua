@@ -63,7 +63,7 @@ function getReward(height)
 end
 
 function getTransactionFromBlock(block,uid)
-    for _,t in ipairs(block.transactions) do
+    for _,t in ipairs(serial.unserialize(block.transactions)) do
         if t.id == uid then return t end
     end
     return nil
