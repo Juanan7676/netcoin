@@ -259,6 +259,7 @@ end
 function consolidateBlock(block)
     cache.setlastBlock(block.uuid)
     storage.saveBlock(block) -- save block in database
+    updateutxo(block) -- update UTXO transactions of this block
     if (block.height%10==0) then storage.cacheutxo() end -- Every 10 blocks do an UTXO cache
 end
 
