@@ -32,6 +32,10 @@ function generateWallet()
     file = io.open("wallet.sk","w")
     file:write(sk.serialize())
     file:close()
+    file = io.open("nodes.txt","w")
+    file:close()
+    storage.generateIndex()
+    storage.generateutxo()
 end
 
 function printTransaction(gpu,x,y,t)

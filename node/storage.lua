@@ -299,4 +299,16 @@ function storage.restoreutxo()
     filesys.copy("/mnt/"..(storage.utxoDisk).."/walletremutxo_cached.txt","/mnt/"..(storage.utxoDisk).."/walletremutxo.txt")
 end
 
+function storage.generateutxo()
+    local file = io.open("/mnt/"..(storage.utxoDisk).."/utxo.txt","w")
+    file:close()
+    file = io.open("/mnt/"..(storage.utxoDisk).."/remutxo.txt","w")
+    file:close()
+    
+    file = io.open("/mnt/"..(storage.utxoDisk).."/walletutxo.txt","w")
+    file:close()
+    file = io.open("/mnt/"..(storage.utxoDisk).."/walletremutxo.txt","w")
+    file:close()
+end
+
 return storage
