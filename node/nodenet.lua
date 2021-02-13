@@ -16,7 +16,7 @@ function nodenet.connectClient(c,p)
     nodenet.sendClient(c,p,"PING")
     local _,_,rp = napi.listentoclient(modem,cache.myPort,c,2)
     if (rp==nil) then return nil
-    else if (rp=="PONG!")then
+    elseif (rp=="PONG!") then
         nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####" .. false)
     end
     nodenet.sync()
