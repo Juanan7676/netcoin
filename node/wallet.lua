@@ -1,6 +1,7 @@
 component = require("component")
 
 cfg = require("config")
+storage = require("storage")
 gpu = component.proxy(cfg.gpu)
 gpu.bind(cfg.scr)
 data = component.data
