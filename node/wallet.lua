@@ -37,6 +37,8 @@ function generateWallet()
     file:close()
     storage.generateIndex()
     storage.generateutxo()
+    file = io.open("lb.txt","w")
+    file:close()
 end
 
 function printTransaction(gpu,x,y,t)
