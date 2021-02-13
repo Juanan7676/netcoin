@@ -229,7 +229,7 @@ function nodenet.newUnknownBlock(clientIP,clientPort,block)
             local chain = lb
             if (chain==nil) then chain={uuid="",height=-1} end
             local recv = {block}
-            while (chain~=nil and chain.uuid ~= recv[#recv].uuid and recv[#recv].height~=0) or (chain==nil and recv[#recv].height==0) do
+            while (chain~=nil and chain.uuid ~= recv[#recv].uuid and recv[#recv].height~=0) or (chain==nil and recv[#recv].height~=0) do
                 local msg
                 local tries = 0
                 repeat
