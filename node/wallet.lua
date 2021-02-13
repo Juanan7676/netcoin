@@ -46,13 +46,15 @@ function generateWallet()
     file:close()
 end
 
-function printTransaction(gpu,x,y,t)
+function printTransaction(gpu,x,y,t,conf)
     local from = "My wallet"
     local to = "My wallet"
     if t.from ~= cache.walletPK.serialize() then from = string.sub(t.from,1,6) .. "..." end
     if t.to ~= cache.walletPK.serialize() then to = string.sub(t.to,1,6) .. "..." end
     
-    text(gpu,x,y,1,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
+    if (conf==nil) then text(gpu,x,y,1,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
+    else text(gpu,x,y,1,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC  " .. conf .. " confirmations")
+    end
 end
 
 function updateScreen(cb,tb,rt,pt)
@@ -64,12 +66,12 @@ function updateScreen(cb,tb,rt,pt)
     
     text(gpu,w1-25,1,2,"Recent transactions")
     for k,v in ipairs(rt) do
-        printTransaction(gpu,w1-40,k+1,v)
+        printTransaction(gpu,w1-40,k+1,v[1])
     end
     
     text(gpu,1,7,2,"Pending transactions ("..#pt..")")
     for k,v in ipairs(pt) do
-        printTransaction(gpu,w1-40,k+1,v)
+        printTransaction(gpu,2,k+1,v[1],v[2])
     end
     
 end
