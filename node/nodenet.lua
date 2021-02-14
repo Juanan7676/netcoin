@@ -5,6 +5,7 @@ local component = require("component")
 local serial = require("serialization")
 local modem = component.modem
 require("common")
+require("minerNode")
 
 local nodenet = {}
 
@@ -17,7 +18,8 @@ function nodenet.connectClient(c,p)
     local _,_,rp = napi.listentoclient(modem,cache.myPort,c,2)
     if (rp==nil) then return nil
     elseif (rp=="PONG!") then
-        nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####0")
+        if (not cache.minerNode) then nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####0")
+        else nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####1") end
         cache.nodes[c] = {}
         cache.nodes[c].ip = c
         cache.nodes[c].port = p
@@ -197,6 +199,10 @@ function nodenet.dispatchNetwork()
     elseif parsed[1]=="GET_LAST_BLOCK" then
         nodenet.sendClient(clientIP,clientPort,serial.serialize(storage.loadBlock(cache.getlastBlock())))
     elseif parsed[1]=="NEWTRANSACT" then
+        if cache.minerNode then
+            
+        end
+        
         for k,v in pairs(cache.nodes) do
             if v.miner=="1" then
                 nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
@@ -213,13 +219,15 @@ function nodenet.newBlock(clientIP,clientPort,block)
     elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     elseif block.previous ~= cache.getlastBlock() then -- We need more blocks!
         local result = nodenet.newUnknownBlock(clientIP,clientPort,block)
-        if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED") end
+        if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED")
+        elseif (cache.minerNode) then newBlock(storage.loadBlock(cache.getlastBlock())) end
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
         print("Consolidating block...")
         consolidateBlock(block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
+        if (cache.minerNode) then newBlock(storage.loadBlock(cache.getlastBlock())) end
         return true
     end
     return false

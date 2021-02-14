@@ -9,6 +9,7 @@ require("common")
 cache.loadNodes()
 cache.myIP = component.modem.address
 cache.myPort = 2000
+cache.minerNode = false
 cache.loadlastBlock()
 print("Synchronizing with network...")
 nodenet.sync()
