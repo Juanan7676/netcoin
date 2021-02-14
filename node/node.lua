@@ -5,6 +5,7 @@ local napi = require("netcraftAPI")
 local component = require("component")
 require("wallet")
 require("common")
+require("minerNode")
 
 cache.loadNodes()
 cache.myIP = component.modem.address
@@ -81,6 +82,12 @@ function processCommand(cmd)
             local res = nodenet.connectClient(parsed[2],tonumber(parsed[3]))
             if res == nil then print("Could not connect to client, check client is online and ip/port is OK!")
             else print("Node added succesfully and synced") end
+        end
+    elseif parsed[1]=="mine" then
+        if cache.getlastBlock()~="error" then
+            newBlock(storage.loadBlock(cache.getlastBlock()))
+        else
+            genesisBlock()
         end
     end
 end

@@ -40,3 +40,24 @@ function newBlock(block)
     b.transactions = serial.serialize(b.transactions)
     component.modem.send(cache.minerControl,7000,"NJ####" .. serial.serialize(b))
 end
+
+function genesisBlock()
+    local b = {}
+    b.uuid = randomUUID(16)
+    b.timestamp = os.time()
+    b.transactions = {}
+    b.previous = b.uuid
+    b.height = 0
+    
+    local rt = {}
+    rt.id = randomUUID(16)
+    rt.from = "gen"
+    rt.to = cache.walletPK.serialize()
+    rt.qty = getReward(b.height)
+    rt.sources = {}
+    rt.rem = 0
+    rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. serial.serialize(rt.sources) .. rt.rem,cache.walletSK)
+    table.insert(b.transactions,rt)
+    b.transactions = serial.serialize(b.transactions)
+    component.modem.send(cache.minerControl,7000,"NJ####" .. serial.serialize(b))
+end
