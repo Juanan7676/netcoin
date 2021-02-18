@@ -14,7 +14,9 @@ The details of the protocol itself can be found on netcoin.txt. Block time is ab
 NetCoin is a deflationary currency, meaning that block rewards are cut in half every 5000 blocks. There will be a point where miner's only incentive will be transaction fees. This feature hasn't been implemented yet, but it is planned on the future.
 
 # I want to run this crypto!
-Great! Use wget or pastebin command from OpenOS with an Internet Card to download the code into one of your computers. Once you have it, you can transfer it via floppy disks to as many computers as wou want. You will need:
+Great! Use wget or pastebin command from OpenOS with an Internet Card to download the code into one of your computers. Once you have it, you can transfer it in-game via floppy disks to as many computers as wou want. You will need:
 - A Data Card for using cryptography
 - 3-4 raids full of Tier 3 Hard Drives (4MB) to store the blockchain
 - Minimum 4MB of RAM
+Run a node. It will automatically set up a wallet for you generating a public/private keypair. You will want to share your pubkey stored in wallet.pk, this is your official NetCoin address in which you will receive money. NEVER SHARE YOUR SECRET KEY STORED IN WALLET.SK! You will need to provide at least one node IP address (modem address) for it to connect to the network. It will automatically synchronize with the rest of the network: blocks, other nodes known...
+To be a miner, you need a node and enable "isMiner" variable. Then you need a mining controller computer connected to the node. Finally, you will connect all your mining computers to the controller, and use "mine" command on the node. You're mining now!
