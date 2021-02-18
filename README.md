@@ -18,5 +18,6 @@ Great! Use wget or pastebin command from OpenOS with an Internet Card to downloa
 - A Data Card for using cryptography
 - 3-4 raids full of Tier 3 Hard Drives (4MB) to store the blockchain
 - Minimum 4MB of RAM
+
 Run a node. It will automatically set up a wallet for you generating a public/private keypair. You will want to share your pubkey stored in wallet.pk, this is your official NetCoin address in which you will receive money. NEVER SHARE YOUR SECRET KEY STORED IN WALLET.SK! You will need to provide at least one node IP address (modem address) for it to connect to the network. It will automatically synchronize with the rest of the network: blocks, other nodes known...
 To be a miner, you need a node and enable "isMiner" variable. Then you need a mining controller computer connected to the node. Finally, you will connect all your mining computers to the controller, and use "mine" command on the node. You're mining now!
