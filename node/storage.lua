@@ -23,6 +23,7 @@ while line ~= nil do
     storage.disks[arr[1]] = arr[2]
     line = df:read()
 end
+df:close()
 
 function storage.generateIndex()
     local file = io.open("/mnt/"..(storage.indexDisk).."/index.txt","w")
@@ -33,13 +34,13 @@ function storage.generateIndex()
 end
 
 function storage.loadIndex(uuid)
-    
-    file = io.open("/mnt/"..(storage.indexDisk).."/index.txt","r")
+    local file,err = io.open("/mnt/"..(storage.indexDisk).."/index.txt","r")
+    if file==nil then print(err) end
     num = hexMod(tohex(storage.data.sha256(uuid)),150000)
     file:seek("set",20*num)
     local data = file:read()
     local arr = explode(",",data)
-    if arr[1]=="0000000000000000" then return nil end
+    if arr[1]=="0000000000000000" then file:close() return nil end
     if arr[1]~=uuid then -- Solve conflict
         local aux = io.open("/mnt/"..(storage.indexDisk).."/conflicts/"..arr[1]..".txt","r")
         local line = aux:read()
@@ -53,6 +54,7 @@ function storage.loadIndex(uuid)
             line = aux:read()
         end
         aux:close()
+        file:close()
         return ret
     end
     file:close()
@@ -60,8 +62,7 @@ function storage.loadIndex(uuid)
 end
 
 function storage.loadRawIndex(uuid)
-    utxo = utxo or false
-    file = io.open("/mnt/"..(storage.indexDisk).."/index.txt","r")
+    local file = io.open("/mnt/"..(storage.indexDisk).."/index.txt","r")
     
     local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
     file:seek("set",20*num)
@@ -156,7 +157,7 @@ function storage.savewalletremutxo(uuid, buuid, tmp)
     file:close()
 end
 
-function storage.tmputxopresent(uuid) storage.utxopresent(uuid,true) end
+function storage.tmputxopresent(uuid) return storage.utxopresent(uuid,true) end
 function storage.utxopresent(uuid, tmp)
     local prefix = ""
     if tmp==true then prefix="tmp" end
@@ -165,12 +166,13 @@ function storage.utxopresent(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         local arr = explode(",",line)
-        if arr[1]==uuid then return arr[2] end
+        if arr[1]==uuid then file:close() return arr[2] end
+        line = file:read()
     end
-    return false
+    file:close() return false
 end
 
-function storage.tmpremutxopresent(uuid) storage.remutxopresent(uuid,true) end
+function storage.tmpremutxopresent(uuid) return storage.remutxopresent(uuid,true) end
 function storage.remutxopresent(uuid, tmp)
     local prefix = ""
     if tmp==true then prefix="tmp" end
@@ -179,8 +181,10 @@ function storage.remutxopresent(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         local arr = explode(",",line)
-        if arr[1]==uuid then return arr[2] end
+        if arr[1]==uuid then file:close() return arr[2] end
+        line = file:read()
     end
+    file:close()
     return false
 end
 
@@ -194,11 +198,12 @@ function storage.removeutxo(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+        line = file:read()
     end
     file:close()
     newfile:close()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
-    filesys.rename("/mnt/"..(storage.utxoDisk).."/utxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."utxo.txt")
 end
 
 function storage.tmpremovewalletutxo(uuid) storage.removewalletutxo(uuid,true) end
@@ -211,11 +216,12 @@ function storage.removewalletutxo(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+        line = file:read()
     end
     file:close()
     newfile:close()
     filesys.remove("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt")
-    filesys.rename("/mnt/"..(storage.utxoDisk).."/walletutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt")
+    filesys.rename("/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo2.txt","/mnt/"..(storage.utxoDisk).."/"..prefix.."walletutxo.txt")
 end
 
 function storage.tmpremoveremutxo(uuid) storage.removeremutxo(uuid,true) end
@@ -228,6 +234,7 @@ function storage.removeremutxo(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+        line = file:read()
     end
     file:close()
     newfile:close()
@@ -245,6 +252,7 @@ function storage.removewalletremutxo(uuid, tmp)
     local line = file:read()
     while line ~= nil do
         if explode(",",line)[1]~=uuid then newfile:write(line.."\n") end
+        line = file:read()
     end
     file:close()
     newfile:close()

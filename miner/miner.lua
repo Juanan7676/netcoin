@@ -1,61 +1,75 @@
 comp = require("component")
 modem = comp.modem
+data = comp.data
+thread = require("thread")
+event = require("event")
+
+math.randomseed(os.time())
+
+function tohex(str)
+    return (str:gsub('.', function (c)
+        return string.format('%02X', string.byte(c))
+    end))
+end
 
 function listen(timeout)
     modem.open(7000)
-    local client, clientPort, msg
+    local client, clientPort, msg, target
     
-    if(timeout==nil) then _,_,client,_,_,clientPort,msg = event.pull("modem_message")
-    else _,_,client,_,_,clientPort,msg = event.pull(timeout,"modem_message") end
+    if(timeout==nil) then _,_,client,_,_,msg,target = event.pull("modem_message")
+    else _,_,client,_,_,msg,target = event.pull(timeout,"modem_message") end
     
-    return client, clientPort, msg
+    return client, msg, target
 end
 
-function minar(headers)
-    local nonce = math.random(0,43157426426)
+function minar(h, target)
+    nonce = math.random(-1000000000000,1000000000000)
     while true do
         for k=1,1000 do
-        local hash = data.sha256(nonce..headers)
-        if hash ~= nil then
-        if (tonumber(tohex(hash),16) <= block.target) then print(tonumber(tohex(hash),16)) coroutine.yield(nonce) end
-        nonce = nonce + 1
+            local hash = data.sha256(tostring(nonce)..h)
+            if hash ~= nil then
+                if (tonumber("0x"..tohex(hash)..".0") <= target) then return true,tostring(nonce) end
+                nonce = nonce + 1
+            end
         end
-        end
-        coroutine.yield(false)
-        os.sleep(0)
+        return false,false
     end
 end
 
 headers = ""
+target = 0
 jobStart = false
+centralIP = nil
 
 function start()
     
-    mc = coroutine.create(minar)
-    
     thread.create( function()
     while true do
-        local client,_,msg=listen()
+        local client,msg,t=listen()
+        print("Starting job with target "..t)
+        centralIP=client
         headers = msg
+        target = t
         jobStart = true
     end end )
     
     while true do
         encontrado = false
-        local val
+        local val, res
         while not encontrado do
             if (jobStart==true) then
                 local start = os.time()
-                __,val = coroutine.resume(mc,headers,math.random(0,43157426426))
+                res,val = minar(headers,tonumber(target))
                 local nend = os.time()
+                local elapsed = (nend-start)*1000/60/60/20
+                modem.send(centralIP,7000,"HR####"..(1000/elapsed))
+                if res==true then break end
+                os.sleep(1)
             else
-                os.sleep(1000)
+                os.sleep(1)
             end
-            local elapsed = (nend-start)*1000/60/60/20
-            modem.broadcast(7000,"HR####"..(1000/elapsed))
-            if val~=false then break end
         end
-        modem.broadcast(7000,"NF####"..val)
+        modem.send(centralIP,7000,"NF####"..val)
         jobStart = false
     end
 end

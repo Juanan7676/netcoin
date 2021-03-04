@@ -67,7 +67,7 @@ function updateScreen(cb,tb,rt,pt)
     text(gpu,w1-25,1,2,"Recent transactions")
     local counter = 2
     for k,v in ipairs(rt) do
-        printTransaction(gpu,w1-40,counter+2,v[1])
+        printTransaction(gpu,w1-40,counter+2,v)
         counter = counter + 1
     end
     

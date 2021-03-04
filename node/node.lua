@@ -11,6 +11,7 @@ cache.loadNodes()
 cache.myIP = component.modem.address
 cache.myPort = 2000
 cache.minerNode = false
+cache.minerControl=""
 cache.loadlastBlock()
 print("Synchronizing with network...")
 nodenet.sync()
@@ -24,7 +25,8 @@ nodenet.reloadWallet()
 
 thread.create(function()
     while true do
-        nodenet.dispatchNetwork()
+        local status, err = pcall(nodenet.dispatchNetwork)
+        if not status then print("Error: "..err) end
     end
 end)
 
@@ -58,13 +60,14 @@ function processCommand(cmd)
         else
             local address = cache.contacts[parsed[2]]
             if address==nil then print("Contact not found!") return false end
-            local qty = tonumber(parsed[3])
+            local qty = math.floor(tonumber(parsed[3])*1000000)
             local tr = nodenet.confectionateTransaction(address,qty)
             if (tr==nil) then print("Could not make transaction! Maybe you tried to spend more funds than you have?")
             else
                 for k,v in pairs(cache.nodes) do
-                    nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
+                    nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. serial.serialize(tr))
                 end
+                if (cache.minerNode) then newTransaction(tr) end
                 print("Transaction was completed successfully. You need to wait a few minutes for the transaction to be processed by miners and appear on the network. This process takes usually around 5 minutes.")
             end
         end

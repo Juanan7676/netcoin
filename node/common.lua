@@ -1,5 +1,5 @@
 function explode(d,p)
-  local t, lledit 
+  local t, ll
   t={}
   ll=0
   if(#p == 1) then return {p} end

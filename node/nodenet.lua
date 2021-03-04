@@ -15,7 +15,7 @@ end
 
 function nodenet.connectClient(c,p)
     nodenet.sendClient(c,p,"PING")
-    local _,_,rp = napi.listentoclient(modem,cache.myPort,c,2)
+    local _,_,rp = napi.listentoclient(modem,cache.myPort,c,5)
     if (rp==nil) then return nil
     elseif (rp=="PONG!") then
         if (not cache.minerNode) then nodenet.sendClient(c,p,"NEWNODE####".. cache.myIP .. "####" .. cache.myPort .. "####0")
@@ -23,7 +23,7 @@ function nodenet.connectClient(c,p)
         cache.nodes[c] = {}
         cache.nodes[c].ip = c
         cache.nodes[c].port = p
-        cache.nodes[c].miner = "0"
+        cache.nodes[c].miner = "1"
         cache.saveNodes()
         nodenet.sync()
     end
@@ -56,6 +56,7 @@ function nodenet.reloadWallet()
     end
     file:close()
     file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    line = file:read()
     while line ~= nil do
         local parsed = explode(",",line)
         local t = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
@@ -72,7 +73,7 @@ function nodenet.reloadWallet()
         end
         line = file:read()
     end
-    updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
+    updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
 end
 
 function nodenet.confectionateTransaction(to, qty)
@@ -86,6 +87,7 @@ function nodenet.confectionateTransaction(to, qty)
     local totalIN=0
     
     local file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    local line = file:read()
     while line ~= nil do
         local parsed = explode(",",line)
         local source = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
@@ -108,6 +110,7 @@ function nodenet.confectionateTransaction(to, qty)
     end
     
     file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
+    line = file:read()
     while line ~= nil do
         local parsed = explode(",",line)
         local source = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
@@ -153,15 +156,17 @@ function nodenet.sync()
     for _,client in pairs(cache.nodes) do
         nodenet.sendClient(client.ip, client.port, "GET_LAST_BLOCK")
         local _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
-        if msg~="NOT_IMPLEMENTED" and msg~=nil then
+        if msg~="NOT_IMPLEMENTED" and msg~=nil and msg~="nil" then
             local block = serial.unserialize(msg)
+            print("Recv: block "..block.uuid.." height "..block.height)
             local result = nodenet.newBlock(client.ip,client.port, block)
-        end
+        else print("Client timeout"..client.ip)end
     end
 end
 
 function nodenet.dispatchNetwork()
     local clientIP,clientPort,msg = napi.listen(modem, cache.myPort)
+    if msg==nil then return end
     local parsed = explode("####",msg)
     
     if parsed[1]=="GETBLOCK" then
@@ -186,7 +191,7 @@ function nodenet.dispatchNetwork()
         end
     elseif parsed[1]=="NEWNODE" then
         local node = parsed[2]
-        if cache[node]~=nil then
+        if cache.nodes[node]==nil then
             for k,client in pairs(cache.nodes) do
                 nodenet.sendClient(client.ip, client.port, "NEWNODE####" .. parsed[2] .. "####" .. parsed[3] .. "####" .. parsed[4])
             end
@@ -200,7 +205,9 @@ function nodenet.dispatchNetwork()
         nodenet.sendClient(clientIP,clientPort,serial.serialize(storage.loadBlock(cache.getlastBlock())))
     elseif parsed[1]=="NEWTRANSACT" then
         if cache.minerNode then
-            
+            if parsed[2]~= nil then
+                newTransaction(serial.unserialize(parsed[2]))
+            end
         end
         
         for k,v in pairs(cache.nodes) do
@@ -223,7 +230,6 @@ function nodenet.newBlock(clientIP,clientPort,block)
         elseif (cache.minerNode) then newBlock(storage.loadBlock(cache.getlastBlock())) end
     elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
-        print("Consolidating block...")
         consolidateBlock(block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")

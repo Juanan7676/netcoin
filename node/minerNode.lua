@@ -1,6 +1,8 @@
 require("common")
 component = require("component")
 serial = require("serialization")
+require("protocol")
+require("wallet")
 cache.transpool = {}
 
 function newTransaction(t)
@@ -18,6 +20,9 @@ function newBlock(block)
     b.transactions = {}
     b.previous = block.uuid
     b.height = block.height + 1
+    
+    local fbago = getPrevChain(block,49)
+    b.target = getNextDifficulty(fbago,block)
     
     for k,v in pairs(cache.transpool) do
         local result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
@@ -48,6 +53,7 @@ function genesisBlock()
     b.transactions = {}
     b.previous = b.uuid
     b.height = 0
+    b.target = serial.unserialize(serial.serialize(2^240))
     
     local rt = {}
     rt.id = randomUUID(16)

@@ -47,14 +47,15 @@ function cache.saveContacts()
 end
 
 function getNextDifficulty(fbago,block)
-    if block.height==0 then return tonumber((2^250).."") end -- Difficulty for genesis block
+    if block==nil then return tonumber((2^240).."") end -- Difficulty for genesis block
+    if block.height==0 then return tonumber((2^240).."") end -- Difficulty for genesis block
     if block.height%50 ~= 0 or block.height==0 then return block.target end
     
     local timeDiff = (block.timestamp - fbago.timestamp)*1000/60/60/20
     local correctionFactor = (15000/timeDiff)
     if correctionFactor > 4 then correctionFactor = 4 end
     if correctionFactor < 0.25 then correctionFactor = 0.25 end
-    return tonumber((block.target * correctionFactor).."")
+    return tonumber((block.target / correctionFactor).."")
 end
 
 function getReward(height)
@@ -82,7 +83,7 @@ function verifyTransaction(t, up, rup, newBlocks)
     if #t.sources > 0 then
         local pk = data.deserializeKey(t.from,"ec-public")
         if pk==nil then print("invalid public key") return false end
-        if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(sources) .. t.rem,pk, t.sig)  then print("invalid signature") return false end
+        if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem,pk, t.sig) then print("invalid signature") return false end
     end
     
     if (#t.sources == 0) then return "gen" end
@@ -177,21 +178,21 @@ function verifyTransactions(block, tmp, blocks)
 end
 
 function verifyBlock(block)
-    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then return false end
-    if (#block.uuid ~= 16) then return false end
+    if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block") return false end
+    if (#block.uuid ~= 16) then print("malformed uuid") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevChain(block,1)
-        if prev==nil then return false end
-        if prev.height ~= block.height-1 then return false end
-        if prev.timestamp >= block.timestamp then return false end
+        if prev==nil then print("previous block not found") return false end
+        if prev.height ~= block.height-1 then print("invalid height: prev is " .. prev.uuid .. " height " .. prev.height .. ", block is " .. block.uuid .. " height " .. block.height) return false end
+        if prev.timestamp >= block.timestamp then print("invalid timestamp") return false end
     end
     
     local fbago = getPrevChain(block,50)
-    if block.target ~= getNextDifficulty(fbago,block) then return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then return false end
+    if block.target ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
+    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
     
-    if not verifyTransactions(block) then return false end
+    if not verifyTransactions(block) then print("invalid transactions") return false end
     return true
 end
 
@@ -207,7 +208,7 @@ function verifyTmpBlock(block, blocks)
     end
     
     local fbago = getPrevList(block,blocks,50)
-    if block.target ~= getNextDifficulty(fbago,block) then print("invalid difficulty") return false end
+    if block.target ~= getNextDifficulty(fbago,getPrevList(block,blocks,1)) then print("invalid difficulty") return false end
     if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block, true, blocks) then print("invalid transactions") return false end
@@ -218,17 +219,26 @@ function updateutxo(block)
 for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
-                if s.from==t.from then 
-                    storage.removeremutxo(s.id)
-                    if (t.from==walletPK.serialize()) then storage.removewalletremutxo(s.id) end
+                local trans
+                local sourceblock = storage.utxopresent(s)
+                if sourceblock~= false then trans = getTransactionFromBlock(storage.loadBlock(sourceblock),s)
+                else
+                    sourceblock = storage.remutxopresent(s)
+                    if sourceblock==false then print("source is neither an UTXO nor a REMUTXO!") return nil end
+                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock),s)
+                end
+                
+                if trans.from==t.from then 
+                    storage.removeremutxo(s)
+                    if (t.from==cache.walletPK.serialize()) then storage.removewalletremutxo(s) end
                 else 
-                    storage.removeutxo(s.id)
-                    if (t.from==walletPK.serialize()) then storage.removewalletutxo(s.id) end
+                    storage.removeutxo(s)
+                    if (t.from==cache.walletPK.serialize()) then storage.removewalletutxo(s) end
                 end
             end
         end
         storage.saveutxo(t.id, block.uuid)
-        if (t.rem>0) then storage.saveremutxo(t.id) end
+        if (t.rem>0) then storage.saveremutxo(t.id, block.uuid) end
         
         if (t.to==cache.walletPK.serialize() and t.qty>0) then storage.savewalletutxo(t.id, block.uuid) end
         if (t.from==cache.walletPK.serialize() and t.rem>0) then storage.savewalletremutxo(t.id, block.uuid) end
@@ -239,17 +249,26 @@ function updatetmputxo(block)
 for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
-                if s.from==t.from then 
-                    storage.tmpremoveremutxo(s.id)
-                    if (t.from==walletPK.serialize()) then storage.tmpremovewalletremutxo(s.id) end
+                local trans
+                local sourceblock = storage.tmputxopresent(s)
+                if sourceblock~= false then trans = getTransactionFromBlock(storage.loadBlock(sourceblock),s)
                 else
-                    if (t.from==walletPK.serialize()) then storage.tmpremovewalletutxo(s.id) end
-                    storage.tmpremoveutxo(s.id) 
+                    sourceblock = storage.tmpremutxopresent(s)
+                    if sourceblock==false then print("source is neither an UTXO nor a REMUTXO!") return nil end
+                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock),s)
+                end
+                
+                if trans.from==t.from then 
+                    storage.tmpremoveremutxo(s)
+                    if (t.from==cache.walletPK.serialize()) then storage.tmpremovewalletremutxo(s) end
+                else
+                    if (t.from==cache.walletPK.serialize()) then storage.tmpremovewalletutxo(s) end
+                    storage.tmpremoveutxo(s) 
                 end
             end
         end
         storage.tmpsaveutxo(t.id, block.uuid)
-        if (t.rem>0) then storage.tmpsaveremutxo(t.id) end
+        if (t.rem>0) then storage.tmpsaveremutxo(t.id, block.uuid) end
         
         if (t.to==cache.walletPK.serialize() and t.qty>0) then storage.tmpsavewalletutxo(t.id, block.uuid) end
         if (t.from==cache.walletPK.serialize() and t.rem>0) then storage.tmpsavewalletremutxo(t.id, block.uuid) end
