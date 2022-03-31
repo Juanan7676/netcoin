@@ -77,7 +77,7 @@ function verifyTransaction(data,tr,unused)
 	-- Now, check if sources are correct & user has enough money
 	sum = 0
 	for _,s in pairs(tr.sources) do
-		if s.to ~= tr.from && s.from ~= tr.from then return false end
+		if s.to ~= tr.from and s.from ~= tr.from then return false end
 		if ~isUnused(tr,unused) then return false end
 		
 		if s.to == tr.from then sum = sum + s.qty
@@ -90,6 +90,7 @@ function verifyTransaction(data,tr,unused)
 end
 
 function loadBlocks(file)
+	if not file then error("Attempt to load blocks from nonexistent file") end
 	local t = serial.unserialize(file:read())
 	sortChain(t)
 	local num = t[#t].uuid
@@ -166,9 +167,9 @@ function broadcast(nodes,msg) -- Broadcasts message MSG to all nodes in NODES
 	end
 end
 
-local nodes = io.open("nodes.txt","r")
-local blockchain = io.open("block.txt","r")
-local unused = io.open("unused.txt","r")
+local nodes = assert(io.open("nodes.txt","r"))
+local blockchain = assert(io.open("block.txt","r"))
+local unused = assert(io.open("unused.txt","r"))
 local srv = net.server(modem,6654)
 
 
@@ -262,7 +263,7 @@ while true do -- Main loop
 			if blocknew.id == last+1 then -- New block in the chain points to my previous block, all correct
 				table.insert(blocks,blocknew)
 				print("Adding new block id " .. blocknew.uuid .. "!")
-				if (~conflict) unused = updateUnused(blocknew,unused)
+				if (~conflict) then unused = updateUnused(blocknew,unused)
 				else 
 					unused = updateUnusedFromZero(blocknew,blocks)
 					conflict = false
@@ -282,8 +283,8 @@ while true do -- Main loop
 		local tr = serial.unserialize(arr[2])
 		if findTransaction(transactions,tr)==nil then
 			if verifyTransaction(data,tr,unusedTransactions) then
-				table.insert(transactions,{os.uptime(),tr}
-				broadcast(list,msg))
+				table.insert(transactions,{os.uptime(),tr})
+				broadcast(list,msg)
 			end
 		end
 	elseif arr[1]=="NEWNODE" then -- We should keep this & propagate the message!

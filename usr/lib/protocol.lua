@@ -12,7 +12,7 @@ function cache.getlastBlock()
     return cache.lb
 end
 function cache.loadlastBlock()
-    local file = io.open("lb.txt","r")
+    local file = assert(io.open("lb.txt","r"))
     cache.lb = file:read()
     file:close()
 end
@@ -26,17 +26,17 @@ function cache.setlastBlock(uuid)
     cache.savelastBlock()
 end
 function cache.loadNodes()
-    local file = io.open("nodes.txt","r")
+    local file = assert(io.open("nodes.txt","r"))
     cache.nodes = serial.unserialize(file:read("*a"))
     file:close()
 end
 function cache.saveNodes()
-    local file = io.open("nodes.txt","w")
+    local file = assert(io.open("nodes.txt","w"))
     file:write(serial.serialize(cache.nodes))
     file:close()
 end
 function cache.loadContacts()
-    local file = io.open("contacts.txt","r")
+    local file = assert(io.open("contacts.txt","r"))
     cache.contacts = serial.unserialize(file:read("*a"))
     file:close()
 end
@@ -64,6 +64,7 @@ function getReward(height)
 end
 
 function getTransactionFromBlock(block,uid)
+	if not block then return nil end
     for _,t in ipairs(serial.unserialize(block.transactions)) do
         if t.id == uid then return t end
     end
@@ -131,8 +132,8 @@ end
 function getPrevChain(block, n)
     local fbago = block
         for k=1,n do
-            fbago = storage.loadBlock(fbago.previous)
-            if fbago.height==0 and k < n then return nil end
+            fbago = storage.loadBlock(fbago.previous) or fbago
+            if fbago.height==0 then return fbago end
         end
         return fbago
 end
@@ -147,7 +148,7 @@ function getPrevList(block, blocks, n)
             break
         end
     end
-    assert(start ~= 0)
+    --assert(start ~= 0)
     
     for k=1,n do
         local tmp = blocks[k+start]
@@ -183,6 +184,9 @@ function verifyBlock(block)
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevChain(block,1)
+		local file = io.open("prevbak.txt","w")
+		file:write(serial.serialize(prev))
+		file:close()
         if prev==nil then print("previous block not found") return false end
         if prev.height ~= block.height-1 then print("invalid height: prev is " .. prev.uuid .. " height " .. prev.height .. ", block is " .. block.uuid .. " height " .. block.height) return false end
         if prev.timestamp >= block.timestamp then print("invalid timestamp") return false end

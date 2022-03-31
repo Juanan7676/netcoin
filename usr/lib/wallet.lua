@@ -1,6 +1,10 @@
 component = require("component")
 
-cfg = require("config")
+--cfg = require("config")
+cfg = {
+	gpu = component.list("gpu")(),
+	scr = component.list("screen")()
+}
 storage = require("storage")
 gpu = component.proxy(cfg.gpu)
 gpu.bind(cfg.scr)
@@ -27,21 +31,21 @@ end
 
 function generateWallet()
     local pk,sk = data.generateKeyPair()
-    local file = io.open("wallet.pk","w")
+    local file = assert(io.open("wallet.pk","w"))
     file:write(pk.serialize())
     file:close()
-    file = io.open("wallet.sk","w")
+    file = assert(io.open("wallet.sk","w"))
     file:write(sk.serialize())
     file:close()
-    file = io.open("nodes.txt","w")
+    file = assert(io.open("nodes.txt","w"))
     file:write("{}")
     file:close()
     storage.generateIndex()
     storage.generateutxo()
-    file = io.open("lb.txt","w")
+    file = assert(io.open("lb.txt","w"))
     file:write("error")
     file:close()
-    file = io.open("contacts.txt","w")
+    file = assert(io.open("contacts.txt","w"))
     file:write("{}")
     file:close()
 end
@@ -49,8 +53,8 @@ end
 function printTransaction(gpu,x,y,t,conf)
     local from = "My wallet"
     local to = "My wallet"
-    if t.from ~= cache.walletPK.serialize() then from = string.sub(t.from,1,6) .. "..." end
-    if t.to ~= cache.walletPK.serialize() then to = string.sub(t.to,1,6) .. "..." end
+    if t.from ~= cache.walletPK.serialize() then from = string.sub(t.from,1,6) .. (#t.from > 6 and "..." or "") end
+    if t.to ~= cache.walletPK.serialize() then to = string.sub(t.to,1,6) .. (#t.to > 6 and "..." or "") end
     
     if (conf==nil) then text(gpu,x,y,7,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
     else text(gpu,x,y,7,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC  " .. conf .. " confirmations")

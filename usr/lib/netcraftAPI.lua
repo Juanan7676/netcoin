@@ -26,4 +26,15 @@ function net.listentoclient(modem, port, client, timeout)
     return client, clientPort, msg
 end
 
+function net.server(modem,port)
+	local t = {}
+	t.listen = function(timeout)
+		return net.listen(modem,port,timeout)
+	end
+	return t
+end
+function net.connect(modem,addr,port)
+	return node --Yes this works!
+end
+
 return net
