@@ -13,8 +13,8 @@ require("minerNode")
 cache.loadNodes()
 cache.myIP = component.modem.address
 cache.myPort = 2000
-cache.minerNode = true
-cache.minerControl="d067eaa1-86d7-4de9-aa62-93851e5533d2"
+cache.minerNode = false
+cache.minerControl=""
 cache.loadlastBlock()
 print("Synchronizing with network...")
 nodenet.sync()
