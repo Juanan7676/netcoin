@@ -1,8 +1,11 @@
 local nodenet = require("nodenet")
+require("storage")
 require("protocol")
 local thread = require("thread")
 local napi = require("netcraftAPI")
 local component = require("component")
+local serial = require("serialization")
+local term = require("term")
 require("wallet")
 require("common")
 require("minerNode")
@@ -22,8 +25,9 @@ cache.rt = {}
 cache.pt = {}
 cache.loadContacts()
 nodenet.reloadWallet()
+term.setCursor(1,15)
 
-thread.create(function()
+local t = thread.create(function()
     while true do
         local status, err = pcall(nodenet.dispatchNetwork)
         if not status then print("Error: "..err) end
@@ -92,9 +96,34 @@ function processCommand(cmd)
         else
             genesisBlock()
         end
+	elseif parsed[1]=="importBlock" then
+		if #parsed == 1 then
+			print("Usage: importBlock <file>")
+		else
+			local file = io.open(parsed[2],"r")
+			local d = serial.unserialize(file:read("*a") or "")
+			nodenet.newBlock(cache.myIP,1,d)
+		end
+	elseif parsed[1] == "refresh" then
+		term.clear()
+		nodenet.reloadWallet()
+		term.setCursor(1,15)
+	elseif parsed[1] == "listNodes" then
+		for i,j in pairs(cache.nodes) do
+			print(serial.serialize(j))
+		end
+	elseif parsed[1] == "setup" then
+		storage.setup(true)
+		term.clear()
+		nodenet.reloadWallet()
+		term.setCursor(1,15)
+	elseif parsed[1] == "exit" then
+		return true
     end
 end
-while true do
+repeat
     local cmd = io.read()
-    processCommand(cmd)
-end
+    local done = processCommand(cmd)
+until done
+
+t:kill()

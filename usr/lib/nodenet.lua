@@ -3,6 +3,7 @@ local storage = require("storage")
 local napi = require("netcraftAPI")
 local component = require("component")
 local serial = require("serialization")
+local os = require("os")
 local modem = component.modem
 require("common")
 require("minerNode")
@@ -31,7 +32,7 @@ function nodenet.connectClient(c,p)
 end
 
 function nodenet.reloadWallet()
-    local file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
+    local file = assert(io.open(getMount(storage.utxoDisk).. "/walletutxo.txt","r"), "Error opening file "..getMount(storage.utxoDisk).. "/walletutxo.txt")
     local line = file:read()
     cache.lt = {}
     cache.pt = {}
@@ -43,6 +44,7 @@ function nodenet.reloadWallet()
         local t = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
         if (t~=nil) then
             local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+		
             if (diff >= 3) then
                 if (#cache.lt < 5) then cache.lt[#cache.lt+1] = t end
                 cache.cb = cache.cb + t.qty
@@ -53,10 +55,12 @@ function nodenet.reloadWallet()
             end
         end
         line = file:read()
+		os.sleep()
     end
     file:close()
-    file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    file = assert(io.open(getMount(storage.utxoDisk).. "/walletremutxo.txt","r"))
     line = file:read()
+	
     while line ~= nil do
         local parsed = explode(",",line)
         local t = getTransactionFromBlock(storage.loadBlock(parsed[2]),parsed[1])
@@ -72,6 +76,7 @@ function nodenet.reloadWallet()
             end
         end
         line = file:read()
+		os.sleep()
     end
     updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
 end
@@ -86,7 +91,7 @@ function nodenet.confectionateTransaction(to, qty)
     t.sources = {}
     local totalIN=0
     
-    local file = io.open("/mnt/".. storage.utxoDisk .. "/walletremutxo.txt","r")
+    local file = io.open(getMount(storage.utxoDisk).. "/walletremutxo.txt","r")
     local line = file:read()
     while line ~= nil do
         local parsed = explode(",",line)
@@ -109,7 +114,7 @@ function nodenet.confectionateTransaction(to, qty)
         return t
     end
     
-    file = io.open("/mnt/".. storage.utxoDisk .. "/walletutxo.txt","r")
+    file = io.open(getMount(storage.utxoDisk).. "/walletutxo.txt","r")
     line = file:read()
     while line ~= nil do
         local parsed = explode(",",line)
@@ -137,6 +142,7 @@ end
 
 function nodenet.sync()
     -- Update node list
+	print("Updating node list...")
     for _,client in pairs(cache.nodes) do
         nodenet.sendClient(client.ip, client.port, "GETNODES")
         local msg
@@ -151,8 +157,12 @@ function nodenet.sync()
                 cache.saveNodes()
             end
         until msg=="END" or msg==nil or msg=="NOT_IMPLEMENTED"
+		if msg == nil or msg == "nil" or msg == "NOT_IMPLEMENTED" then
+			print("Client timeout or error on "..client.ip)
+		end
     end
     -- Get last block
+	print("Updating last block...")
     for _,client in pairs(cache.nodes) do
         nodenet.sendClient(client.ip, client.port, "GET_LAST_BLOCK")
         local _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
@@ -160,7 +170,8 @@ function nodenet.sync()
             local block = serial.unserialize(msg)
             print("Recv: block "..block.uuid.." height "..block.height)
             local result = nodenet.newBlock(client.ip,client.port, block)
-        else print("Client timeout"..client.ip)end
+        else print("Client timeout or error on "..client.ip)
+		end
     end
 end
 
@@ -168,7 +179,7 @@ function nodenet.dispatchNetwork()
     local clientIP,clientPort,msg = napi.listen(modem, cache.myPort)
     if msg==nil then return end
     local parsed = explode("####",msg)
-    
+    --print(parsed[1])
     if parsed[1]=="GETBLOCK" then
         local req = parsed[2]
         local block = storage.loadBlock(req)
@@ -211,28 +222,49 @@ function nodenet.dispatchNetwork()
         end
         
         for k,v in pairs(cache.nodes) do
-            if v.miner=="1" then
+            if v.miner=="1" and v.ip ~= clientIP then
                 nodenet.sendClient(v.ip, v.port, "NEWTRANSACT####" .. parsed[2])
             end
         end
     elseif parsed[1]=="PING" then
         nodenet.sendClient(clientIP,clientPort,"PONG!")
+	elseif parsed[1]=="NOT_IMPLEMENTED" then
+		return
+	else
+		nodenet.sendClient(clientIP,clientPort,"NOT_IMPLEMENTED")
     end
 end
 
 function nodenet.newBlock(clientIP,clientPort,block)
+	local file = io.open("bak.txt","w")
+	file:seek("end")
+	file:write("\n")
+	file:write(serial.serialize(block))
+	file:close()
     if not block or not block.height then return false end
-    if cache.getlastBlock()~="error" and block.height <= storage.loadBlock(cache.getlastBlock()).height then nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
-    elseif block.previous==nil then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
+    if cache.getlastBlock()~="error" and block.height <= (storage.loadBlock(cache.getlastBlock()) or {height = -math.huge}).height then
+		print("Block "..block.uuid.." rejected due to not enough height")
+		nodenet.sendClient(clientIP,clientPort,"NOT_ENOUGH_HEIGHT")
+    elseif block.previous==nil then
+		print("Orphaned block "..block.uuid.." rejected")
+		nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     elseif block.previous ~= cache.getlastBlock() then -- We need more blocks!
+		print("Attempting to locate parent blocks of block "..block.uuid.."...")
         local result = nodenet.newUnknownBlock(clientIP,clientPort,block)
-        if result==false then nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED")
-        elseif (cache.minerNode) then newBlock(storage.loadBlock(cache.getlastBlock())) end
-    elseif not verifyBlock(block) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
+        if result==false then
+			print("Orphaned block "..block.uuid.." rejected")
+			nodenet.sendClient(clientIP,clientPort,"ERR_BLOCKS_REJECTED")
+        elseif (cache.minerNode) then
+			newBlock(storage.loadBlock(cache.getlastBlock()))
+		end
+    elseif not verifyBlock(block) then
+		print("Block "..block.uuid.." rejected due to being invalid")
+		nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCK")
     else
         consolidateBlock(block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED")
+		os.sleep(1.05)
         if (cache.minerNode) then newBlock(storage.loadBlock(cache.getlastBlock())) end
         return true
     end
@@ -240,36 +272,42 @@ function nodenet.newBlock(clientIP,clientPort,block)
 end
 
 function nodenet.newUnknownBlock(clientIP,clientPort,block)
+	if block.previous == block.uuid then
+		print("Genesis block received!")
+		reconstructUTXOFromZero({},block)
+	end
     local lb = storage.loadBlock(cache.getlastBlock())
-            local chain = lb
-            if (chain==nil) then chain={uuid="",height=-1} end
-            local recv = {block}
-            while (chain.uuid~="" and chain.uuid ~= recv[#recv].uuid and recv[#recv].height~=0) or (chain.uuid=="" and recv[#recv].height~=0) do
-                local msg
-                local tries = 0
-                repeat
-                    nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
-                    _,_,msg = napi.listentoclient(modem,cache.myPort,clientIP,2)
-                    if msg~=nil then msg = explode("####",msg) 
-                    else return false
-                    end
-                    tries = tries + 1
-                until msg[1] == "OK" or tries >= 5
-                if tries >= 5 then return false end
-                local recvb = serial.unserialize(msg[2])
-                if recvb.uuid ~= recv[#recv].previous then return false end
-                recv[#recv+1] = recvb
-                if (chain.uuid ~= "") then chain = storage.loadBlock(chain.previous) end
-            end
-            if chain.uuid=="" or ( ((lb.height - lb.height%10) ~= (chain.height - chain.height%10)) or recv[#recv].height==0) then
-                local result = reconstructUTXOFromZero(recv, block)
-                if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCKS")
-                else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
-            else
-                local result = reconstructUTXOFromCache(recv, block)
-                if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
-                else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
-            end
+	local chain = lb
+	if (chain==nil) then chain={uuid="",height=-1} end
+	local recv = {block}
+	while (chain.uuid~="" and chain.uuid ~= recv[#recv].uuid and recv[#recv].height~=0) or (chain.uuid=="" and recv[#recv].height~=0) do
+		local msg
+		local tries = 0
+		repeat
+			nodenet.sendClient(clientIP,clientPort,"GETBLOCK####"..(recv[#recv].previous))
+			_,_,msg = napi.listentoclient(modem,cache.myPort,clientIP,2)
+			if msg~=nil then 
+				msg = explode("####",msg) 
+			else 
+				msg = {}
+			end
+			tries = tries + 1
+		until msg[1] == "OK" or tries >= 5
+		if tries >= 5 then return false end
+		local recvb = serial.unserialize(msg[2])
+		if recvb.uuid ~= recv[#recv].previous then return false end
+		recv[#recv+1] = recvb
+		if (chain.uuid ~= "") then chain = storage.loadBlock(chain.previous) end
+	end
+	if chain.uuid=="" or ( ((lb.height - lb.height%10) ~= (chain.height - chain.height%10)) or recv[#recv].height==0) then
+		local result = reconstructUTXOFromZero(recv, block)
+		if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_BLOCKS")
+		else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
+	else
+		local result = reconstructUTXOFromCache(recv, block)
+		if (not result) then nodenet.sendClient(clientIP,clientPort,"INVALID_CHAIN")
+		else nodenet.sendClient(clientIP,clientPort,"BLOCK_ACCEPTED") return true end
+	end
     return false
 end
 
