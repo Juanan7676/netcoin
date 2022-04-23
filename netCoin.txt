@@ -4,7 +4,7 @@ BLOQUE:
 	height: number | id del bloque (0,1,2,...), en orden de la cadena (el bloque fundador tiene id 0, el segundo id 1...)
 	uuid: string | identificador único del bloque (string de longitud 32, a-zA-Z0-9)
 	timestamp: number | fecha de creación del bloque
-	previous: number | uuid del bloque anterior
+	previous: string | uuid del bloque anterior
 	transactions: table | tabla de transacciones
 	nonce: number | solucion del bloque. Se verifica que sha256(nonce .. height .. timestamp .. previous .. transactions) <= target
 	target: number | target del bloque, a ajustar cada 10 bloques minados (10 bloques -> 50 min, 5min/bloque). El target máximo es 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).

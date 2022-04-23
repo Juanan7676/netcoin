@@ -3,6 +3,8 @@ modem = comp.modem
 data = comp.data
 thread = require("thread")
 event = require("event")
+serial = require("serialization")
+require("math.BigNum")
 
 math.randomseed(os.time())
 
@@ -23,12 +25,13 @@ function listen(timeout)
 end
 
 function minar(h, target)
-    nonce = math.random(-1000000000000,1000000000000)
+    nonce = BigNumber.new(math.random(-1000000000000,1000000000000))
+    h = tohex(data.sha256(h))
     while true do
         for k=1,1000 do
-            local hash = data.sha256(tostring(nonce)..h)
+            local hash = data.sha256(h..nonce)
             if hash ~= nil then
-                if (tonumber("0x"..tohex(hash)..".0") <= target) then return true,tostring(nonce) end
+                if (BigNumber.fromHex(tohex(hash)) <= target) then return true,nonce end
                 nonce = nonce + 1
             end
         end
@@ -46,7 +49,8 @@ function start()
     thread.create( function()
     while true do
         local client,msg,t=listen()
-        print("Starting job with target "..t)
+        print("Starting new job")
+        t = BigNumber.new(t)
         centralIP=client
         headers = msg
         target = t
@@ -69,7 +73,7 @@ function start()
                 os.sleep(1)
             end
         end
-        modem.send(centralIP,7000,"NF####"..val)
+        modem.send(centralIP,7000,"NF####"..serial.serialize(val))
         jobStart = false
     end
 end

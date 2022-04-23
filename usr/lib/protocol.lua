@@ -1,10 +1,43 @@
-component = require("component")
-local data = component.data
-local storage = require("storage")
-local serial = require("serialization")
-filesys = require("filesystem")
+local component = {
+    -- data: DataComponent
+}
+local storage = {
+    -- loadBlock(id: string): Block
+    -- saveBlock(block: Block): void
 
-cache = {}
+    -- utxopresent(tx: Transaction): boolean
+    -- remutxopresent(tx: Transaction): boolean
+    -- tmputxopresent(tx: Transaction): boolean
+    -- tmpremutxopresent(tx: Transaction): boolean
+
+    -- tmpsaveutxo(txID: string, blockID: string): void
+    -- tmpsaveremutxo(txID: string, blockID: string): void
+
+    -- removeutxo(tx: Transaction): void
+    -- removeremutxo(tx: Transaction): void
+    -- removewalletutxto(tx: Transaction): void
+    -- removewalletremutxo(tx: Transaction): void
+
+    -- consolidatetmputxo(): void
+    -- setuptmpenvutxo(): void
+    -- discardtmputxo(): void
+}
+local serial = {
+    -- serialize(obj: any): string
+    -- unserialize(data: string): any
+}
+local filesys = {}
+
+function protocolConstructor(componentProvider, storageProvider, serialProvider, filesysProvider)
+    component = componentProvider
+    storage = storageProvider
+    serial = serialProvider
+    filesys = filesysProvider
+end
+
+require("math.BigNum")
+
+local cache = {}
 cache.lb = "error"
 cache.nodes = {}
 cache.contacts = {}
@@ -47,15 +80,16 @@ function cache.saveContacts()
 end
 
 function getNextDifficulty(fbago,block)
-    if block==nil then return tonumber((2^240).."") end -- Difficulty for genesis block
-    if block.height==0 then return tonumber((2^240).."") end -- Difficulty for genesis block
+    if block==nil then return BigNum.new(2)^BigNum.new(240) end -- Difficulty for genesis block
+    if block.height==0 then return BigNum.new(2)^BigNum.new(240) end -- Difficulty for genesis block
     if block.height%50 ~= 0 or block.height==0 then return block.target end
     
     local timeDiff = (block.timestamp - fbago.timestamp)*1000/60/60/20
     local correctionFactor = (15000/timeDiff)
     if correctionFactor > 4 then correctionFactor = 4 end
     if correctionFactor < 0.25 then correctionFactor = 0.25 end
-    return tonumber((block.target / correctionFactor).."")
+    local quotient, _ = (fbago.target * BigNum.new(correctionFactor*100))/BigNum.new(100)
+    return quotient
 end
 
 function getReward(height)
@@ -194,7 +228,9 @@ function verifyBlock(block)
     
     local fbago = getPrevChain(block,50)
     if block.target ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
+    
+    local headerHash = tohex(data.sha256(block.height .. block.timestamp .. block.previous .. block.transactions))
+    if BigNum.fromHex(tohex( data.sha256(headerHash .. block.nonce) ),16) > block.target then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block) then print("invalid transactions") return false end
     return true

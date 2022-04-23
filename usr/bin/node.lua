@@ -1,6 +1,9 @@
 local nodenet = require("nodenet")
 require("storage")
+
 require("protocol")
+protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
+
 local thread = require("thread")
 local napi = require("netcraftAPI")
 local component = require("component")

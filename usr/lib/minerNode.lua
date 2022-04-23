@@ -1,7 +1,10 @@
 require("common")
 component = require("component")
 serial = require("serialization")
+
 require("protocol")
+protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
+
 require("wallet")
 cache.transpool = {}
 
