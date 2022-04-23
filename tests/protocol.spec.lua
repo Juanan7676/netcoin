@@ -1,4 +1,4 @@
-package.path = './lib/?.lua;./../usr/lib/?.lua;' .. package.path
+package.path = './tests/lib/?.lua;./usr/lib/?.lua;' .. package.path
 package.loaded.component = require('mocks.component')
 package.loaded.serialization = require('mocks.serialization')
 package.loaded.filesystem = require('mocks.filesystem')
