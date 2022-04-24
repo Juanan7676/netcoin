@@ -2,6 +2,11 @@ os.execute("rm -r usr")
 
 baseDir = 'https://raw.githubusercontent.com/Juanan7676/netcoin/master/'
 
+os.execute('mkdir usr')
+os.execute('mkdir usr/bin')
+os.execute('mkdir usr/lib')
+os.execute('mkdir usr/lib/math')
+
 os.execute('wget '..baseDir.."usr/bin/miner.lua usr/bin/miner.lua")
 os.execute('wget '..baseDir.."usr/bin/minerCentral.lua usr/bin/minerCentral.lua")
 os.execute('wget '..baseDir.."usr/bin/node.lua usr/bin/node.lua")
