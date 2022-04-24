@@ -854,11 +854,11 @@ elseif type( num ) == "string" or type( num ) == "number" then
    else
       bnum1.signal = '+' ;
    end
-   num = string.gsub( num , " " , "" ) ;
+   num = string.gsub( tostring(num) , " " , "" ) ;
    local sf = string.find( num , "e" ) ;
    --Handles if the number is in exp notation
    if sf ~= nil then
-      num = string.gsub( num , "%." , "" ) ;
+      num = string.gsub( tostring(num) , "%." , "" ) ;
       local e = string.sub( num , sf + 1 ) ;
       e = tonumber(e) ;
       if e ~= nil and e > 0 then 
