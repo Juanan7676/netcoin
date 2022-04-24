@@ -37,6 +37,9 @@ end
 
 require("math.BigNum")
 
+-- Constants used in the protocol
+STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(240)
+
 local cache = {}
 cache.lb = "error"
 cache.nodes = {}
@@ -80,8 +83,8 @@ function cache.saveContacts()
 end
 
 function getNextDifficulty(fbago,block)
-    if block==nil then return BigNum.new(2)^BigNum.new(240) end -- Difficulty for genesis block
-    if block.height==0 then return BigNum.new(2)^BigNum.new(240) end -- Difficulty for genesis block
+    if block==nil then return STARTING_DIFFICULTY end -- Difficulty for genesis block
+    if block.height==0 then return STARTING_DIFFICULTY end -- Difficulty for genesis block
     if block.height%50 ~= 0 or block.height==0 then return block.target end
     
     local timeDiff = (block.timestamp - fbago.timestamp)*1000/60/60/20
@@ -112,13 +115,24 @@ function searchBlockInList(list,uid)
     return nil
 end
 
+function hashTransactions(transaction_table)
+    local hash = component.data.sha256("")
+    for _, t in ipairs(transaction_table) do
+        hash = component.data.sha256(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
+        for _,v in ipairs(t.sources) do
+            hash = component.data.sha256(hash .. v)
+        end
+    end
+    return hash
+end
+
 function verifyTransaction(t, up, rup, newBlocks)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
     if t.qty <= 0 or t.rem < 0 then print("invalid qty or rem") return false end
     if #t.sources > 0 then
-        local pk = data.deserializeKey(t.from,"ec-public")
+        local pk = component.data.deserializeKey(t.from,"ec-public")
         if pk==nil then print("invalid public key") return false end
-        if not data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem,pk, t.sig) then print("invalid signature") return false end
+        if not component.data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem,pk, t.sig) then print("invalid signature") return false end
     end
     
     if (#t.sources == 0) then return "gen" end
@@ -166,7 +180,8 @@ end
 function getPrevChain(block, n)
     local fbago = block
         for k=1,n do
-            fbago = storage.loadBlock(fbago.previous) or fbago
+            fbago = storage.loadBlock(fbago.previous)
+            if fbago == nil then return nil end
             if fbago.height==0 then return fbago end
         end
         return fbago
@@ -199,7 +214,7 @@ end
 
 function verifyTransactions(block, tmp, blocks)
     local genFound = false
-    for _,v in ipairs(serial.unserialize(block.transactions)) do
+    for _,v in ipairs(block.transactions) do
         if (tmp==nil) then result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
         else result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent, blocks) end
         if result==false then return false end
@@ -215,6 +230,7 @@ end
 function verifyBlock(block)
     if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block") return false end
     if (#block.uuid ~= 16) then print("malformed uuid") return false end
+    if (block.height < 0) then print("invalid height") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevChain(block,1)
@@ -229,8 +245,8 @@ function verifyBlock(block)
     local fbago = getPrevChain(block,50)
     if block.target ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
     
-    local headerHash = tohex(data.sha256(block.height .. block.timestamp .. block.previous .. block.transactions))
-    if BigNum.fromHex(tohex( data.sha256(headerHash .. block.nonce) ),16) > block.target then print("invalid pow "..block.uuid) return false end
+    local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
+    if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) ),16) > block.target then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block) then print("invalid transactions") return false end
     return true
@@ -249,7 +265,7 @@ function verifyTmpBlock(block, blocks)
     
     local fbago = getPrevList(block,blocks,50)
     if block.target ~= getNextDifficulty(fbago,getPrevList(block,blocks,1)) then print("invalid difficulty") return false end
-    if tonumber(tohex(data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
+    if tonumber(tohex(component.data.sha256(block.nonce .. block.height .. block.timestamp .. block.previous .. block.transactions)),16) > block.target then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block, true, blocks) then print("invalid transactions") return false end
     return true

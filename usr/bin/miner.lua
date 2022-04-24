@@ -25,13 +25,13 @@ function listen(timeout)
 end
 
 function minar(h, target)
-    nonce = BigNumber.new(math.random(-1000000000000,1000000000000))
-    h = tohex(data.sha256(h))
+    local nonce = BigNum.new(math.random(-1000000000000,1000000000000))
+    h = tohex(sha256(h))
     while true do
         for k=1,1000 do
-            local hash = data.sha256(h..nonce)
+            local hash = sha256(h..tostring(nonce))
             if hash ~= nil then
-                if (BigNumber.fromHex(tohex(hash)) <= target) then return true,nonce end
+                if (BigNum.fromHex(tohex(hash)) <= target) then return true,tostring(nonce) end
                 nonce = nonce + 1
             end
         end

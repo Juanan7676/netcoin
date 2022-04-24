@@ -1,30 +1,32 @@
-ESTUCTURAS DE DATOS DE LA RED NETCOIN
+NETCOIN DATA STRUCTURES
 
-BLOQUE:
-	height: number | id del bloque (0,1,2,...), en orden de la cadena (el bloque fundador tiene id 0, el segundo id 1...)
-	uuid: string | identificador único del bloque (string de longitud 32, a-zA-Z0-9)
-	timestamp: number | fecha de creación del bloque
-	previous: string | uuid del bloque anterior
-	transactions: table | tabla de transacciones
-	nonce: number | solucion del bloque. Se verifica que sha256(nonce .. height .. timestamp .. previous .. transactions) <= target
-	target: number | target del bloque, a ajustar cada 10 bloques minados (10 bloques -> 50 min, 5min/bloque). El target máximo es 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).
+BLOCK:
+	height: number | block height (0,1,2,...) in the blockchain (genesis block has height 0, second block has height 1, etc.)
+	uuid: string | unique block identifier (16 char long string, a-zA-Z0-9)
+	timestamp: number | timestamp of the block
+	previous: string | uuid of previous block
+	transactions: table | table of block transactions
+	nonce: number | block solution. It must satisfy that sha256(nonce .. sha256(uuid .. height .. timestamp .. previous .. hash(transactions))) <= target
+	target: number | block target, it is adjusted every 50 blocks (targeting 5 real minutes/block). Maximum target is 1 >> 240 (2^16 = 65535 hashes para encontrar un bloque).
 	
-TRANSACCIÓN:
-	id: string | UUID de la transaccion (string de longitud 32, a-zA-Z0-9), x :(a-Z | 0-9)
-	from: string | clave publica (hex) del emisor
-	to: string | clave publica (hex) del destinatario
-	qty: number | NTC a transferir al destinatario (por el orden en que aparecen en "to")
-	sources: {table|nil} | Tabla con las transacciones de origen. En todas estas transacciones debe aparecer como TO from y se verifica que sum(source[i].qty)>=this.qty. Si es nil, es una transacción de generación (sólo puede  aparecer una por bloque).
-	rem: number | cantidad de NTC a transferir al emisor, como cambio
-	sig: string | firma digital de la transaccion. Se verifica que edsa(serialize(transaccion), from, sig)==true
+TRANSACTION:
+	id: string | unique transaction identifier (32 char-long string, a-zA-Z0-9), x :(a-Z | 0-9)
+	from: string | emmiter public key
+	to: string | beneficiary public key
+	qty: number | NTC to transfer
+	sources: {table|nil} | Origin transactions table. Every transaction t of this table must verify that source[i].to==this.from. It also must hold that sum(source[i].qty)>=this.qty. It this is nil, this is considered a NTC block reward transaction, and only one can appear in each block at maximum.
+	rem: number | NTC remainder to be refunded to the emmiter, therefore, sum(source[i].qty) == this.qty + this.rem
+	sig: string | signature of this transactions. It holds that ecdsa(serialize(this), this.from, this.sig)==true
 
-ALMACENAMIENTO DE LA CADENA DE BLOQUES
-Todos los bloques emitidos son almacenados por la red, independientemente de si forman parte de la cadena principal de bloques o no. Para hallar el saldo de un usuario, el sistema hace una búsqueda exhaustiva desde el bloque con mayor height almacenado válido, y realiza un sumatorio de las transacciones en los bloques, siguiendo hacia atrás hasta el bloque génesis, recibidas menos las enviadas. Esta suma, lógicamente, debe ser >= 0.
+BLOCKCHAIN STORAGE
+All blocks emmited are stored by the network as long as they are valid, even if they are not part of the main branch of the blockchain (orphaned blocks).
+To calculate the amount of NTC a user has, the system does an exhaustive search from the stored block with most height, and sums all the transactions in the blocks, until the genesis block. This sum, obviously, must be always >= 0.
 
-Para evitar todo este coste computacional, los nodos pueden hacer una "poda" de la cadena de bloques, almacenando para un 'height' concreto el balance actual de todas las cuentas conocidas por la red.
-Estos nodos no se consideran válidos y no pueden realizar transacciones. No obstante, un nodo "completo" que almacene la cadena de bloques completa, puede escuchar la petición de un nodo 'light' que quiera realizar una transacción (cobrando una comisión por ello, si así desea). Los nodos completos, para evitar tener que realizar una búsqueda exahustiva de la cadena de bloques cada vez que realizan una transacción, pueden almacenar en caché (no necesariamente en RAM, puede ser en disco) todas las transacciones no utilizadas de la red.
+This can involve a lot of computational work. Therefore, a node can prune part of the blockchain, storing in a specific height the balance of all accounts known by the network.
+A node that does this is not considered a full node and cannot verify transactions. But a full node that does store the full blockchain can act as a "proxy server" for a light node to process transactions and publish them.
+Full nodes, however, can store unspent transaction outputs (UTXOs) caches in order to better reconstruct the UTXO pool when a conflict in the chain occurs.
 
-Cada bloque tiene un tamaño máximo de 10KB. Así, en un disco duro de 3MB, se pueden almacenar como máximo 300 bloques.
+Every block has a maximum size of 10KB, so in a 3MB HDD up to 300 blocks can be stored.
 
 ESTRUCTURA DE LA RED NETCRAFT
 Hay esencialmente tres tipos de nodos en la red:
