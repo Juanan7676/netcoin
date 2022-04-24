@@ -91,4 +91,3 @@ cache.walletPK = data.deserializeKey(file:read("*a"),"ec-public")
 file:close()
 file = io.open("wallet.sk","r")
 cache.walletSK = data.deserializeKey(file:read("*a"),"ec-private")
-

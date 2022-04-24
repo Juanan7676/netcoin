@@ -40,7 +40,7 @@ require("math.BigNum")
 -- Constants used in the protocol
 STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(240)
 
-local cache = {}
+cache = {}
 cache.lb = "error"
 cache.nodes = {}
 cache.contacts = {}
