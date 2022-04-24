@@ -9,14 +9,14 @@ function sha256(str)
 end
 
 function mine(h, target)
-    local nonce = BigNum.new(math.random(-1000000000000,1000000000000))
+    local nonce = randomUUID(16)
     h = tohex(sha256(h))
     while true do
         for k=1,1000 do
-            local hash = sha256(h..tostring(nonce))
+            local hash = sha256(h..nonce)
             if hash ~= nil then
-                if (BigNum.fromHex(tohex(hash)) <= target) then return true,tostring(nonce) end
-                nonce = nonce + 1
+                if (BigNum.fromHex(tohex(hash)) <= target) then return true,nonce end
+                nonce = randomUUID(16)
             end
         end
         return false,false

@@ -988,14 +988,24 @@ end
 
 -- Custom function by Juanan76
 
+__precomputedExponents = {}
+for k=0,64 do
+   __precomputedExponents[k] = BigNum.new(16)^k
+end
+
 function BigNum.fromHex(hexStr)
    local exponent = #hexStr - 1
    local ret = BigNum.new(0)
-
-   for c in hexStr:gmatch('.') do
-      ret = ret + tonumber(c,16)*(BigNum.new(16)^exponent)
-      exponent = exponent - 1
+   if exponent <= 63 then -- fast algorithm
+      for c in hexStr:gmatch('.') do
+         ret = ret + tonumber(c,16)*__precomputedExponents[exponent]
+         exponent = exponent - 1
+      end
+   else
+      for c in hexStr:gmatch('.') do
+         ret = ret + tonumber(c,16)*(BigNum.new(16)^exponent)
+         exponent = exponent - 1
+      end
    end
-
    return ret
 end

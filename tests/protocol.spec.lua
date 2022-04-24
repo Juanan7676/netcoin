@@ -185,6 +185,7 @@ end
 function test_verifyBlock_01()
     STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(-1)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -194,8 +195,9 @@ end
 
 -- VerifyBlock: invalid nonce is invalid
 function test_verifyBlock_02()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :create()
@@ -204,8 +206,9 @@ end
 
 -- VerifyBlock: missing transactions is invalid
 function test_verifyBlock_03()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -216,8 +219,9 @@ end
 
 -- VerifyBlock: missing nonce is invalid
 function test_verifyBlock_04()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -228,8 +232,9 @@ end
 
 -- VerifyBlock: missing height is invalid
 function test_verifyBlock_05()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -240,8 +245,9 @@ end
 
 -- VerifyBlock: missing uuid is invalid
 function test_verifyBlock_06()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -252,8 +258,9 @@ end
 
 -- VerifyBlock: missing timestamp is invalid
 function test_verifyBlock_07()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -264,8 +271,9 @@ end
 
 -- VerifyBlock: missing target is invalid
 function test_verifyBlock_08()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -276,8 +284,9 @@ end
 
 -- VerifyBlock: missing previous is invalid
 function test_verifyBlock_09()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -288,8 +297,9 @@ end
 
 -- VerifyBlock: valid block
 function test_verifyBlock_10()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(STARTING_DIFFICULTY)
         :calculateValidNonce()
@@ -299,8 +309,9 @@ end
 
 -- VerifyBlock: invalid starting difficulty
 function test_verifyBlock_11()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(0)
         :setTarget(BigNum.new(2)^BigNum.new(255))
         :calculateValidNonce()
@@ -310,8 +321,9 @@ end
 
 -- VerifyBlock: nonexistent previous block
 function test_verifyBlock_12()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
     local block = BlockFactory:new()
+        :setUUID('0000000000000000')
         :setHeight(1)
         :setTarget(STARTING_DIFFICULTY)
         :setPreviousUUID('nonexistent')
@@ -322,7 +334,7 @@ end
 
 -- VerifyBlock: existent previous block
 function test_verifyBlock_13()
-    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(252)
+    STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(246)
 
     local chain = BlockFactory:new():createChain(2,{STARTING_DIFFICULTY, STARTING_DIFFICULTY})
     storage.saveBlockChain(chain)
