@@ -4,10 +4,9 @@ serial = require("serialization")
 event = require("event")
 require('math.BigNum')
 require('protocol')
-modem = component.proxy(component.get(""))
-modem2 = component.proxy(component.get(""))
+modem = component.modem
 modem.open(7000)
-modem2.open(7000)
+modem.open(7001)
 
 hashrates = {}
 block = nil
@@ -58,7 +57,7 @@ thread.create( function()
                 jreq = client
                 difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
                 print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
-                modem2.broadcast(7000,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target)
+                modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target)
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])
             elseif parsed[1]=="NF" then
@@ -75,7 +74,7 @@ thread.create( function()
 end )
 
 while true do
-    if block ~= nil then modem2.broadcast(7000,block.height .. block.timestamp .. block.previous .. block.transactions, block.target) end
+    if block ~= nil then modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. block.transactions, block.target) end
     local sum = 0
     for k,v in pairs(hashrates) do
         sum = sum + v

@@ -67,14 +67,14 @@ function start()
                 res,val = minar(headers,tonumber(target))
                 local nend = os.time()
                 local elapsed = (nend-start)*1000/60/60/20
-                modem.send(centralIP,7000,"HR####"..(1000/elapsed))
+                modem.send(centralIP,7001,"HR####"..(1000/elapsed))
                 if res==true then break end
                 os.sleep(1)
             else
                 os.sleep(1)
             end
         end
-        modem.send(centralIP,7000,"NF####"..serial.serialize(val))
+        modem.send(centralIP,7001,"NF####"..serial.serialize(val))
         jobStart = false
     end
 end
