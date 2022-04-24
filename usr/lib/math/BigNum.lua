@@ -25,7 +25,7 @@
 
 --%%%%%%%%  Constants used in the file %%%%%%%%--{{{1
 RADIX = 10^7 ;
-RADIX_LEN = math.floor( math.log10 ( RADIX ) ) ;
+RADIX_LEN = math.floor( math.log ( RADIX )/math.log(10) ) ;
 
 
 --%%%%%%%%        Start of Code        %%%%%%%%--
