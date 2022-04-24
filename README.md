@@ -1,3 +1,5 @@
+[![CI](https://github.com/Juanan7676/netcoin/actions/workflows/blank.yml/badge.svg)](https://github.com/Juanan7676/netcoin/actions/workflows/blank.yml)
+
 # What's NetCoin?
 NetCoin is a cryptocurrency designed for OpenComputers, a Minecraft mod that adds computers in the game. It follows Bitcoin's original philosophy: a completely decentralized network of nodes, each one maintaining a ledger with everyone's transactions, grouped into blocks that miners need to create solving the proof-of-work (PoW).
 
