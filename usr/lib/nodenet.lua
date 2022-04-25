@@ -230,6 +230,14 @@ function nodenet.dispatchNetwork()
         end
     elseif parsed[1]=="PING" then
         nodenet.sendClient(clientIP,clientPort,"PONG!")
+    elseif parsed[1]=="CENTRALMINER_ANNOUNCE" then
+        if not cache.isMiner then nodenet.sendClient(clientIP,clientPort,"ERR_NOT_MINER")
+        elseif minercentralIP~= false then nodenet.sendClient(clientIP,clientPort,"ERR_FORBIDDEN")
+        else
+            minercentralIP = clientIP
+            nodenet.sendClient(clientIP,clientPort,"OK")
+            print("Miner central controller detected and registered.")
+        end
 	elseif parsed[1]=="NOT_IMPLEMENTED" then
 		return
 	else

@@ -16,7 +16,11 @@ function deleteTransaction(id)
     cache.transpool[id] = nil
 end
 
+minercentralIP = false
+
 function newBlock(block)
+    if minercentralIP == false then return end
+
     local b = {}
     b.uuid = randomUUID(16)
     b.timestamp = os.time()
@@ -45,18 +49,19 @@ function newBlock(block)
     rt.rem = 0
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. serial.serialize(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
-    b.transactions = serial.serialize(b.transactions)
-    component.modem.broadcast(7000,"NJ####" .. serial.serialize(b))
+    component.modem.send(minercentralIP,7000,"NJ####" .. serial.serialize(b))
 end
 
 function genesisBlock()
+    if minercentralIP == false then return end
+
     local b = {}
     b.uuid = randomUUID(16)
     b.timestamp = os.time()
     b.transactions = {}
     b.previous = b.uuid
     b.height = 0
-    b.target = serial.unserialize(serial.serialize(2^240))
+    b.target = BigNum.new(2)^240
     
     local rt = {}
     rt.id = randomUUID(16)
@@ -67,6 +72,5 @@ function genesisBlock()
     rt.rem = 0
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. serial.serialize(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
-    b.transactions = serial.serialize(b.transactions)
-    component.modem.broadcast(7000,"NJ####" .. serial.serialize(b))
+    component.modem.send(minercentralIP,7000,"NJ####" .. serial.serialize(b))
 end

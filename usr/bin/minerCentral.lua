@@ -47,6 +47,14 @@ function listentonode(c,timeout)
     return client, msg
 end
 
+print("Contacting node, announcing our IP")
+contacted = false
+while not contacted do
+  modem.broadcast(7303,7000, "CENTRALMINER_ANNOUNCE")
+  _, msg = listen(3000)
+  if (msg ~= nil and msg == "OK_REGISTERED") then contacted = true end
+end
+
 thread.create( function()
     while true do
         local client,msg=listen()
