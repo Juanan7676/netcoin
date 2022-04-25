@@ -2,6 +2,7 @@ component = require("component")
 thread = require("thread")
 serial = require("serialization")
 event = require("event")
+term = require("term")
 require('math.BigNum')
 require('protocol')
 modem = component.modem
@@ -53,6 +54,8 @@ _, msg = listentonode(nil,3000)
 if (msg == nil or msg ~= "OK") then 
   print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
   os.exit(1)
+else
+  print("Node registered ourselves succesfully, listening for new jobs")
 end
 
 thread.create( function()
@@ -64,18 +67,18 @@ thread.create( function()
                 block = serial.unserialize(parsed[2])
                 jreq = client
                 difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
-                print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
+                term.write("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
                 modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target)
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])
             elseif parsed[1]=="NF" then
-                print("BLOCK MINED! Nonce="..parsed[2])
+              term.write("BLOCK MINED! Nonce="..parsed[2])
                 block.nonce = parsed[2]
                 modem.send(jreq,2000,7000,"NEWBLOCK####"..serial.serialize(block))
                 local _,tmp = listentonode(jreq,2)
-                if tmp==nil then print("Warning: no response from node")
-                elseif tmp=="BLOCK_ACCEPTED" then print("Block accepted")
-                else print("Block rejected by node: got " .. tmp) end
+                if tmp==nil then term.write("Warning: no response from node")
+                elseif tmp=="BLOCK_ACCEPTED" then term.write("Block accepted")
+                else term.write("Block rejected by node: got " .. tmp) end
             end
         end
     end
@@ -88,6 +91,6 @@ while true do
         sum = sum + v
         hashrates[k] = nil
     end
-    print("Total hashrate: "..sum.." H/s")
+    term.write("Total hashrate: "..sum.." H/s")
     os.sleep(10)
 end
