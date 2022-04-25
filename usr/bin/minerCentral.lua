@@ -51,7 +51,7 @@ print("Contacting node, announcing our IP")
 modem.broadcast(2000,7000, "CENTRALMINER_ANNOUNCE")
 _, msg = listen(3000)
 if (msg == nil or msg ~= "OK") then 
-  print("Unable to contact masternode, aborting")
+  print("Unable to contact masternode, aborting (got ".. msg ..")")
   os.exit(1)
 end
 
