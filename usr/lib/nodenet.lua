@@ -146,7 +146,7 @@ function nodenet.sync()
     -- Update node list
 	print("Updating node list...")
     for _,client in pairs(cache.nodes) do
-        nodenet.sendClient(client.ip, client.port, "GETNODES")
+        nodenet.sendClient(client.ip, tonumber(client.port), "GETNODES")
         local msg
         repeat
             _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
@@ -166,7 +166,7 @@ function nodenet.sync()
     -- Get last block
 	print("Updating last block...")
     for _,client in pairs(cache.nodes) do
-        nodenet.sendClient(client.ip, client.port, "GET_LAST_BLOCK")
+        nodenet.sendClient(client.ip, tonumber(client.port), "GET_LAST_BLOCK")
         local _,_,msg = napi.listentoclient(modem, cache.myPort, client.ip, 2)
         if msg~="NOT_IMPLEMENTED" and msg~=nil and msg~="nil" then
             local block = serial.unserialize(msg)
@@ -198,7 +198,7 @@ function nodenet.dispatchNetwork()
         local result = nodenet.newBlock(clientIP,clientPort,block)
         if result==true then
             for _,client in pairs(cache.nodes) do
-                nodenet.sendClient(client.ip, client.port, "NEWBLOCK####"..parsed[2])
+                nodenet.sendClient(client.ip, tonumber(client.port), "NEWBLOCK####"..parsed[2])
             end
             nodenet.reloadWallet()
         end
@@ -206,7 +206,7 @@ function nodenet.dispatchNetwork()
         local node = parsed[2]
         if cache.nodes[node]==nil then
             for k,client in pairs(cache.nodes) do
-                nodenet.sendClient(client.ip, client.port, "NEWNODE####" .. parsed[2] .. "####" .. parsed[3] .. "####" .. parsed[4])
+                nodenet.sendClient(client.ip, tonumber(client.port), "NEWNODE####" .. parsed[2] .. "####" .. parsed[3] .. "####" .. parsed[4])
             end
             cache.nodes[node] = {}
             cache.nodes[node].ip = node

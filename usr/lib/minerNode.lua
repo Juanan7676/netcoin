@@ -46,7 +46,7 @@ function newBlock(block)
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. serial.serialize(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
     b.transactions = serial.serialize(b.transactions)
-    component.modem.send(cache.minerControl,7000,"NJ####" .. serial.serialize(b))
+    component.modem.broadcast(7000,"NJ####" .. serial.serialize(b))
 end
 
 function genesisBlock()
@@ -68,5 +68,5 @@ function genesisBlock()
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. serial.serialize(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
     b.transactions = serial.serialize(b.transactions)
-    component.modem.send(cache.minerControl,7000,"NJ####" .. serial.serialize(b))
+    component.modem.broadcast(7000,"NJ####" .. serial.serialize(b))
 end
