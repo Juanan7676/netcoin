@@ -179,6 +179,8 @@ end
 
 function nodenet.dispatchNetwork()
     local clientIP,clientPort,msg = napi.listen(modem, cache.myPort)
+    clientPort = tonumber(clientPort)
+    if clientPort==nil then return end
     if msg==nil then return end
     local parsed = explode("####",msg)
     --print(parsed[1])
