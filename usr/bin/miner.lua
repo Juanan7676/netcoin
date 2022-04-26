@@ -51,7 +51,7 @@ function start()
     while true do
         local client,msg,t=listen()
         print("Starting new job")
-        t = BigNumber.new(t)
+        t = serial.unserialize(t)
         centralIP=client
         headers = msg
         target = t

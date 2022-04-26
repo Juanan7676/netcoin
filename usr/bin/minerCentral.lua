@@ -5,7 +5,7 @@ event = require("event")
 term = require("term")
 require('math.BigNum')
 require('protocol')
-protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
+protocolConstructor(require("component"), nil, require("serialization"), require("filesystem"))
 modem = component.modem
 modem.open(7000)
 modem.open(7001)
@@ -68,8 +68,8 @@ thread.create( function()
                 block = serial.unserialize(parsed[2])
                 jreq = client
                 difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
-                term.write("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
-                modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target)
+                print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
+                modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])
             elseif parsed[1]=="NF" then
@@ -86,12 +86,12 @@ thread.create( function()
 end )
 
 while true do
-    if block ~= nil then modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target) end
+    if block ~= nil then modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target)) end
     local sum = 0
     for k,v in pairs(hashrates) do
         sum = sum + v
         hashrates[k] = nil
     end
-    term.write("Total hashrate: "..sum.." H/s")
+    print("Total hashrate: "..sum.." H/s")
     os.sleep(10)
 end
