@@ -68,7 +68,7 @@ thread.create( function()
                 block = serial.unserialize(parsed[2])
                 jreq = client
                 difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
-                print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..difficulty)
+                print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..tostring(difficulty))
                 modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])

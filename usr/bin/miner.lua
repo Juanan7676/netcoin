@@ -15,8 +15,10 @@ function tohex(str)
     end))
 end
 
+sha256 = comp.data.sha256
+
 function listen(timeout)
-    modem.open(7000)
+    modem.open(7001)
     local client, clientPort, msg, target
     
     if(timeout==nil) then _,_,client,_,_,msg,target = event.pull("modem_message")
