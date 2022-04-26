@@ -231,7 +231,7 @@ function nodenet.dispatchNetwork()
     elseif parsed[1]=="PING" then
         nodenet.sendClient(clientIP,clientPort,"PONG!")
     elseif parsed[1]=="CENTRALMINER_ANNOUNCE" then
-        if not cache.isMiner then nodenet.sendClient(clientIP,clientPort,"ERR_NOT_MINER")
+        if not cache.minerNode then nodenet.sendClient(clientIP,clientPort,"ERR_NOT_MINER")
         elseif minercentralIP~= false and minerCentralIP~=clientIP then nodenet.sendClient(clientIP,clientPort,"ERR_FORBIDDEN")
         else
             minercentralIP = clientIP

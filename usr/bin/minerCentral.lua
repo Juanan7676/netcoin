@@ -50,7 +50,7 @@ end
 
 print("Contacting node, announcing our IP")
 modem.broadcast(2000,7000, "CENTRALMINER_ANNOUNCE")
-_, msg = listentonode(nil,2)
+_, msg = listentonode(nil,5)
 if (msg == nil or msg ~= "OK") then 
   print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
   os.exit(1)
@@ -75,7 +75,7 @@ thread.create( function()
               term.write("BLOCK MINED! Nonce="..parsed[2])
                 block.nonce = parsed[2]
                 modem.send(jreq,2000,7000,"NEWBLOCK####"..serial.serialize(block))
-                local _,tmp = listentonode(jreq,2)
+                local _,tmp = listentonode(jreq,5)
                 if tmp==nil then term.write("Warning: no response from node")
                 elseif tmp=="BLOCK_ACCEPTED" then term.write("Block accepted")
                 else term.write("Block rejected by node: got " .. tmp) end
@@ -85,7 +85,7 @@ thread.create( function()
 end )
 
 while true do
-    if block ~= nil then modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. block.transactions, block.target) end
+    if block ~= nil then modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), block.target) end
     local sum = 0
     for k,v in pairs(hashrates) do
         sum = sum + v
