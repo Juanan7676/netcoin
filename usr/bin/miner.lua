@@ -78,3 +78,5 @@ function start()
         jobStart = false
     end
 end
+
+start()
