@@ -5,6 +5,7 @@ event = require("event")
 term = require("term")
 require('math.BigNum')
 require('protocol')
+protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
 modem = component.modem
 modem.open(7000)
 modem.open(7001)
