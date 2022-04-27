@@ -66,7 +66,7 @@ function start()
         while not encontrado do
             if (jobStart==true) then
                 local start = os.time()
-                res,val = minar(headers,tonumber(target))
+                res,val = minar(headers,t)
                 local nend = os.time()
                 local elapsed = (nend-start)*1000/60/60/20
                 modem.send(centralIP,7001,"HR####"..(1000/elapsed))
