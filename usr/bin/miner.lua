@@ -16,6 +16,7 @@ function tohex(str)
 end
 
 sha256 = comp.data.sha256
+HASHES_PER_CYCLE = 100
 
 function listen(timeout)
     modem.open(7001)
@@ -31,7 +32,7 @@ function minar(h, target)
     local nonce = randomUUID(16)
     h = tohex(sha256(h))
     while true do
-        for k=1,100 do
+        for k=1,HASHES_PER_CYCLE do
             local hash = sha256(h..nonce)
             if hash ~= nil then
                 if (BigNum.fromHex(tohex(hash)) <= target) then return true,nonce end
@@ -70,7 +71,7 @@ function start()
                 res,val = minar(headers,t)
                 local nend = os.time()
                 local elapsed = (nend-start)*1000/60/60/20
-                modem.send(centralIP,7001,"HR####"..(1000/elapsed))
+                modem.send(centralIP,7001,"HR####"..(HASHES_PER_CYCLE/elapsed))
                 if res==true then break end
                 os.sleep(1)
             else
