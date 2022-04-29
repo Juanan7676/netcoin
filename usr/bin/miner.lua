@@ -31,12 +31,13 @@ function minar(h, target)
     local nonce = randomUUID(16)
     h = tohex(sha256(h))
     while true do
-        for k=1,1000 do
+        for k=1,100 do
             local hash = sha256(h..nonce)
             if hash ~= nil then
                 if (BigNum.fromHex(tohex(hash)) <= target) then return true,nonce end
                 nonce = randomUUID(16)
             end
+            os.sleep(0) -- yield to avoid a crash
         end
         return false,false
     end
