@@ -29,5 +29,7 @@ jobs:
         uses: xpol/setup-lua@v0.3
 
       # Runs a single command using the runners shell
-      - name: Run test
+      - name: Protocol tests
         run: lua tests/protocol.spec.lua -v
+      - name: Miner tests
+        run: lua tests/miner.spec.lua -v

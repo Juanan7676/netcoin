@@ -28,22 +28,6 @@ function listen(timeout)
     return client, msg, target
 end
 
-function minar(h, target)
-    local nonce = randomUUID(16)
-    h = tohex(sha256(h))
-    while true do
-        for k=1,HASHES_PER_CYCLE do
-            local hash = sha256(h..nonce)
-            if hash ~= nil then
-                if (BigNum.fromHex(tohex(hash)) <= target) then return true,nonce end
-                nonce = randomUUID(16)
-            end
-            os.sleep(0) -- yield to avoid a crash
-        end
-        return false,false
-    end
-end
-
 headers = ""
 target = 0
 jobStart = false
@@ -68,12 +52,12 @@ function start()
         while not encontrado do
             if (jobStart==true) then
                 local start = os.time()
-                res,val = minar(headers,t)
+                res,val = minar(headers,t, sha256, BigNum, HASHES_PER_CYCLE)
+                if res==true then break end
                 local nend = os.time()
                 local elapsed = (nend-start)*1000/60/60/20
                 modem.send(centralIP,7001,"HR####"..(HASHES_PER_CYCLE/elapsed))
-                if res==true then break end
-                os.sleep(1)
+                os.sleep(0)
             else
                 os.sleep(1)
             end

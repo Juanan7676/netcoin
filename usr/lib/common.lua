@@ -60,3 +60,19 @@ function randomUUID(length)
     end
     return str
 end
+
+function minar(h, target, hashFunc, BigNum, iterations)
+    local nonce = randomUUID(16)
+    h = tohex(hashFunc(h))
+    while true do
+        for k=1,iterations do
+            local hash = hashFunc(h..nonce)
+            if hash ~= nil then
+                if (BigNum.fromHex(tohex(hash)) <= target) then return true,nonce end
+                nonce = randomUUID(16)
+            end
+            os.sleep(0) -- yield to avoid a crash
+        end
+        return false,false
+    end
+end
