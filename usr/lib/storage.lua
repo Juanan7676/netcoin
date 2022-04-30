@@ -314,12 +314,12 @@ end
 function storage.loadIndex(uuid)
     local file,err = assert(io.open(getMount(storage.indexDisk).."/index.txt","r"))
     if file==nil then print(err) end
-	if not uuid then return nil end
+	if not uuid then file:close() return nil end
 	local arr
 	local data
 	repeat
 		data = file:read()
-		if not data then return nil end
+		if not data then file:close() return nil end
 		arr = explode(",",data)
 	until (arr[1] == uuid)
     if arr[1]=="0000000000000000" then file:close() return nil end
@@ -350,7 +350,7 @@ function storage.loadRawIndex(uuid)
 	local data
     repeat
 		data = file:read()
-		if not data then return nil end
+		if not data then file:close() return nil end
 		arr = explode(",",data)
 	until (arr[1] == uuid)
     file:close()
