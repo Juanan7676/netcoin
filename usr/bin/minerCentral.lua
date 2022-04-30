@@ -73,13 +73,13 @@ thread.create( function()
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])
             elseif parsed[1]=="NF" then
-              term.write("BLOCK MINED! Nonce="..parsed[2])
+                print("BLOCK MINED! Nonce="..parsed[2])
                 block.nonce = parsed[2]
                 modem.send(jreq,2000,7000,"NEWBLOCK####"..serial.serialize(block))
                 local _,tmp = listentonode(jreq,5)
-                if tmp==nil then term.write("Warning: no response from node")
-                elseif tmp=="BLOCK_ACCEPTED" then term.write("Block accepted")
-                else term.write("Block rejected by node: got " .. tmp) end
+                if tmp==nil then print("Warning: no response from node")
+                elseif tmp=="BLOCK_ACCEPTED" then print("Block accepted")
+                else print("Block rejected by node: got " .. tmp) end
             end
         end
     end

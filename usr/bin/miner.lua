@@ -62,7 +62,7 @@ function start()
                 os.sleep(1)
             end
         end
-        modem.send(centralIP,7001,"NF####"..serial.serialize(val))
+        modem.send(centralIP,7001,"NF####"..val)
         jobStart = false
     end
 end
