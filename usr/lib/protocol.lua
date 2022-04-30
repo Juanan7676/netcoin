@@ -38,7 +38,7 @@ end
 require("math.BigNum")
 
 -- Constants used in the protocol
-STARTING_DIFFICULTY = BigNum.new(2)^BigNum.new(240)
+STARTING_DIFFICULTY = BigNum.new(2)^240
 
 cache = {}
 cache.lb = "error"
@@ -243,7 +243,7 @@ function verifyBlock(block)
     end
     
     local fbago = getPrevChain(block,50)
-    if block.target ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
+    if BigNum.new(block.target) ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
     
     local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
     if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) ),16) > block.target then print("invalid pow "..block.uuid) return false end
