@@ -407,6 +407,7 @@ function storage.saveutxo(uuid, buuid, tmp)
     if tmp==true then prefix="tmp" end
 
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."utxo.txt","a")
+	if file==nil then file=io.open(getMount(storage.utxoDisk).."/"..prefix.."utxo.txt","w") end
     file:write(uuid..","..buuid.."\n")
     file:close()
 end
@@ -417,6 +418,7 @@ function storage.savewalletutxo(uuid, buuid, tmp)
     if tmp==true then prefix="tmp" end
 
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletutxo.txt","a")
+	if file==nil then file=io.open(getMount(storage.utxoDisk).."/"..prefix.."walletutxo.txt","w") end
     file:write(uuid..","..buuid.."\n")
     file:close()
 end
@@ -427,6 +429,7 @@ function storage.saveremutxo(uuid, buuid, tmp)
     if tmp==true then prefix="tmp" end
 
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."remutxo.txt","a")
+	if file==nil then file=io.open(getMount(storage.utxoDisk).."/"..prefix.."remutxo.txt","w") end
     file:write(uuid..","..buuid.."\n")
     file:close()
 end
@@ -437,6 +440,7 @@ function storage.savewalletremutxo(uuid, buuid, tmp)
     if tmp==true then prefix="tmp" end
 
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletremutxo.txt","a")
+	if file==nil then file=io.open(getMount(storage.utxoDisk).."/"..prefix.."walletremutxo.txt","w") end
     file:write(uuid..","..buuid.."\n")
     file:close()
 end
@@ -447,6 +451,7 @@ function storage.utxopresent(uuid, tmp)
     if tmp==true then prefix="tmp" end
 
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."utxo.txt","r")
+	if file==nil then return false end
     local line = file:read()
     while line ~= nil do
         local arr = explode(",",line)
@@ -462,6 +467,7 @@ function storage.remutxopresent(uuid, tmp)
     if tmp==true then prefix="tmp" end
     
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."remutxo.txt","r")
+	if file==nil then return false end
     local line = file:read()
     while line ~= nil do
         local arr = explode(",",line)
@@ -478,6 +484,8 @@ function storage.removeutxo(uuid, tmp)
     if tmp==true then prefix="tmp" end
     
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."utxo.txt","r")
+	if file==nil then return end
+
     local newfile = io.open(getMount(storage.utxoDisk).."/"..prefix.."utxo2.txt","w")
     local line = file:read()
     while line ~= nil do
@@ -496,6 +504,7 @@ function storage.removewalletutxo(uuid, tmp)
     if tmp==true then prefix="tmp" end
     
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletutxo.txt","r")
+	if file==nil then return end
     local newfile = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletutxo2.txt","w")
     local line = file:read()
     while line ~= nil do
@@ -514,6 +523,7 @@ function storage.removeremutxo(uuid, tmp)
     if tmp==true then prefix="tmp" end
     
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."remutxo.txt","r")
+	if file==nil then return end
     local newfile = io.open(getMount(storage.utxoDisk).."/"..prefix.."remutxo2.txt","w")
     local line = file:read()
     while line ~= nil do
@@ -532,6 +542,7 @@ function storage.removewalletremutxo(uuid, tmp)
     if tmp==true then prefix="tmp" end
     
     local file = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletremutxo.txt","r")
+	if file==nil then return end
     local newfile = io.open(getMount(storage.utxoDisk).."/"..prefix.."walletremutxo2.txt","w")
     local line = file:read()
     while line ~= nil do
