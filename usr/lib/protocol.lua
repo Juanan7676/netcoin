@@ -102,7 +102,7 @@ end
 
 function getTransactionFromBlock(block,uid)
 	if not block then return nil end
-    for _,t in ipairs(serial.unserialize(block.transactions)) do
+    for _,t in ipairs(block.transactions) do
         if t.id == uid then return t end
     end
     return nil
@@ -274,7 +274,7 @@ function verifyTmpBlock(block, blocks)
 end
 
 function updateutxo(block)
-for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
+for _,t in ipairs(block.transactions) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
                 local trans
@@ -304,7 +304,7 @@ for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
 end
 
 function updatetmputxo(block)
-for _,t in ipairs(serial.unserialize(block.transactions)) do -- update UTXO list
+for _,t in ipairs(block.transactions) do -- update UTXO list
         if t.sources~=nil then
             for _,s in ipairs(t.sources) do
                 local trans
