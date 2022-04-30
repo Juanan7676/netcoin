@@ -244,10 +244,10 @@ function verifyBlock(block)
     end
     
     local fbago = getPrevChain(block,50)
-    if BigNum.new(block.target) ~= getNextDifficulty(fbago,getPrevChain(block,1)) then print("invalid difficulty") return false end
+    if BigNum.new(block.target) ~= BigNum.new(getNextDifficulty(fbago,getPrevChain(block,1))) then print("invalid difficulty") return false end
     
     local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
-    if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > block.target then print("invalid pow "..block.uuid) return false end
+    if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > BigNum.new(block.target) then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block) then print("invalid transactions") return false end
     return true
@@ -265,10 +265,10 @@ function verifyTmpBlock(block, blocks)
     end
     
     local fbago = getPrevList(block,blocks,50)
-    if BigNum.new(block.target) ~= getNextDifficulty(fbago,getPrevList(block,blocks,1)) then print("invalid difficulty") return false end
+    if BigNum.new(block.target) ~= BigNum.new(getNextDifficulty(fbago,getPrevList(block,blocks,1))) then print("invalid difficulty") return false end
    
     local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
-    if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > block.target then print("invalid pow "..block.uuid) return false end
+    if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > BigNum.new(block.target) then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block, true, blocks) then print("invalid transactions") return false end
     return true
