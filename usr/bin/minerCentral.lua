@@ -63,7 +63,7 @@ thread.create( function()
     while true do
         local client,msg=listen()
         if msg~=nil then
-            local parsed = explode("####",msg)
+            local parsed = explode("####",tostring(msg))
             if parsed[1]=="NJ" then
                 block = serial.unserialize(parsed[2])
                 jreq = client
