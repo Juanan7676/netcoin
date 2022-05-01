@@ -20,6 +20,14 @@ function getMount(addr)
 	end
 end
 
+function storage.generateIndex()
+	local file = io.open(getMount(storage.indexDisk).."/index.txt","w")
+    for k=1,150000 do
+        file:write("0000000000000000,00\n")
+    end
+    file:close()
+end
+
 function storage.reloadDisks()
 	local df = io.open("disks.txt","r")
 	if not df then return end
@@ -302,14 +310,6 @@ if (storage.data==nil) then
 end
 storage.setup()
 storage.reloadDisks()
-
-function storage.generateIndex()
-	local file = io.open(getMount(storage.indexDisk).."/index.txt","w")
-    for k=1,150000 do
-        file:write("0000000000000000,00\n")
-    end
-    file:close()
-end
 
 function storage.loadIndex(uuid)
     local file,err = assert(io.open(getMount(storage.indexDisk).."/index.txt","r"))
