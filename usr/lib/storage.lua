@@ -288,9 +288,7 @@ function storage.setup(force)
 		h:close()
 	end
 	for i,j in pairs(indextbc) do
-		local h = io.open(getMount(storage.indexDisk).."/"..i,"w")
-		h:write(j)
-		h:close()
+		storage.generateIndex()
 	end
 	for i,j in pairs(wallettbc) do
 		local h = io.open(getMount(storage.utxoDisk).."/"..i,"w")
@@ -306,7 +304,7 @@ storage.setup()
 storage.reloadDisks()
 
 function storage.generateIndex()
-	local file = io.open("/mnt/"..(storage.indexDisk).."/index.txt","w")
+	local file = io.open(getMount(storage.indexDisk).."/index.txt","w")
     for k=1,150000 do
         file:write("0000000000000000,00\n")
     end
