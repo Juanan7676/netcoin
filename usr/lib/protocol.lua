@@ -110,7 +110,7 @@ end
 
 function searchBlockInList(list,uid)
     for _,b in pairs(list) do
-        if b.id==uid then return b end
+        if b.uuid==uid then return b end
     end
     return nil
 end
