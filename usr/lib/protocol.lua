@@ -353,7 +353,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
             end
             return false
         end
-        storage.saveBlock(b)
+        storage.saveBlock(block)
         updatetmputxo(block)
     end
     storage.consolidatetmputxo()
@@ -372,7 +372,7 @@ function reconstructUTXOFromCache(newblocks, lastblock)
             end
             return false
         end
-        storage.saveBlock(b)
+        storage.saveBlock(block)
         updatetmputxo(block)
     end
     storage.consolidatetmputxo()
