@@ -348,12 +348,13 @@ function reconstructUTXOFromZero(newblocks, lastblock)
         if not verifyTmpBlock(block,newblocks) then
             print("invalid block")
             storage.discardtmputxo()
+            for _,b in pairs(newblocks) do
+                storage.deleteBlock(b.uuid)
+            end
             return false
         end
-        updatetmputxo(block)
-    end
-    for _,b in ipairs(newblocks) do
         storage.saveBlock(b)
+        updatetmputxo(block)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
@@ -366,12 +367,13 @@ function reconstructUTXOFromCache(newblocks, lastblock)
         local block = getPrevList(lastblock,newblocks,lastblock.height-k)
         if not verifyTmpBlock(block,newblocks) then
             storage.discardtmputxo()
+            for _,b in pairs(newblocks) do
+                storage.deleteBlock(b.uuid)
+            end
             return false
         end
-        updatetmputxo(block)
-    end
-    for _,b in ipairs(newblocks) do
         storage.saveBlock(b)
+        updatetmputxo(block)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
