@@ -116,10 +116,11 @@ function searchBlockInList(list,uid)
 end
 
 function hashTransactions(transaction_table)
-    local hash = component.data.sha256("")
+    local hash = ""
     table.sort(transaction_table, function (a,b) return a.id < b.id end)
     for _, t in ipairs(transaction_table) do
         hash = component.data.sha256(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
+        table.sort(t.sources, function(a,b) return a < b end)
         for _,v in ipairs(t.sources) do
             hash = component.data.sha256(hash .. v)
         end
@@ -230,8 +231,12 @@ end
 
 function verifyBlock(block)
     if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block") return false end
-    if (#block.uuid ~= 16) then print("malformed uuid") return false end
+    if (#block.uuid ~= 64) then print("malformed uuid") return false end
+    local headerHash = tohex(component.data.sha256(block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
+    if (headerHash ~= block.uuid) then print("invalid uuid") return false end
+
     if (block.height < 0) then print("invalid height") return false end
+    if (block.timestamp > os.time()) then print("timestamp from the future") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevChain(block,1)
@@ -246,7 +251,6 @@ function verifyBlock(block)
     local fbago = getPrevChain(block,50)
     if BigNum.new(block.target) ~= BigNum.new(getNextDifficulty(fbago,getPrevChain(block,1))) then print("invalid difficulty") return false end
     
-    local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
     if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > BigNum.new(block.target) then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block) then print("invalid transactions") return false end
@@ -255,7 +259,12 @@ end
 
 function verifyTmpBlock(block, blocks)
     if not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or not block.transactions or not block.target then print("malformed block") return false end
-    if (#block.uuid ~= 16) then print("malformed uuid") return false end
+    if (#block.uuid ~= 64) then print("malformed uuid") return false end
+    local headerHash = tohex(component.data.sha256(block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
+    if (headerHash ~= block.uuid) then print("invalid uuid") return false end
+
+    if (block.height < 0) then print("invalid height") return false end
+    if (block.timestamp > os.time()) then print("timestamp from the future") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevList(block,blocks,1)
@@ -266,8 +275,7 @@ function verifyTmpBlock(block, blocks)
     
     local fbago = getPrevList(block,blocks,50)
     if BigNum.new(block.target) ~= BigNum.new(getNextDifficulty(fbago,getPrevList(block,blocks,1))) then print("invalid difficulty") return false end
-   
-    local headerHash = tohex(component.data.sha256(block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions)))
+    
     if BigNum.fromHex(tohex( component.data.sha256(headerHash .. block.nonce) )) > BigNum.new(block.target) then print("invalid pow "..block.uuid) return false end
     
     if not verifyTransactions(block, true, blocks) then print("invalid transactions") return false end

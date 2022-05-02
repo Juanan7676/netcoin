@@ -23,7 +23,7 @@ end
 function storage.generateIndex()
 	local file = io.open(getMount(storage.indexDisk).."/index.txt","w")
     for k=1,150000 do
-        file:write("0000000000000000,00\n")
+        file:write("00000000000000000000000000000000,00\n")
     end
     file:close()
 	os.execute("mkdir "..getMount(storage.indexDisk).."/conflicts")
@@ -318,19 +318,19 @@ function storage.loadIndex(uuid)
 	if not uuid then file:close() return nil end
 
 	local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
-    file:seek("set",20*num)
+    file:seek("set",36*num)
     local data = file:read()
     local arr = explode(",",data)
 
-    if arr[1]=="0000000000000000" then file:close() return nil end
-    if arr[1]~=uuid then -- Solve conflict
-        local aux = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","r")
+    if arr[1]=="00000000000000000000000000000000" then file:close() return nil end
+    if tohex(arr[1])~=uuid then -- Solve conflict
+        local aux = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","r")
 		if aux==nil then file:close() return nil end
         local line = aux:read()
         local ret = nil
         while line ~= nil do
             local tmp = explode(",",line)
-            if tmp[1]==uuid then
+            if tohex(tmp[1])==uuid then
                 ret = line
                 break
             end
@@ -348,25 +348,25 @@ function storage.loadRawIndex(uuid)
     local file = io.open(getMount(storage.indexDisk).."/index.txt","r")
     
     local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
-	file:seek("set",20*num)
+	file:seek("set",36*num)
     local data = file:read()
     file:close()
     return data
 end
 
 function storage.saveIndex(uuid,disk)
-    local i = storage.loadRawIndex(uuid) or "0000000000000000"
+    local i = storage.loadRawIndex(uuid) or "00000000000000000000000000000000"
     local arr = explode(",",i)
-    if arr[1]~="0000000000000000" and arr[1]~=uuid then -- Solve conflict
-        local file = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","a")
-		if file==nil then file = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","w") end
-        file:write(uuid..","..disk.."\n")
+    if arr[1]~="00000000000000000000000000000000" and tohex(arr[1])~=uuid then -- Solve conflict
+        local file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","a")
+		if file==nil then file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","w") end
+        file:write(fromhex(uuid)..","..disk.."\n")
         file:close()
     else
         local file = io.open(getMount(storage.indexDisk).."/index.txt","a")
 		local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
-        file:seek("set",20*num)
-        file:write(uuid..","..disk.."\n")
+        file:seek("set",36*num)
+        file:write(fromhex(uuid)..","..disk.."\n")
         file:close()
     end
 end
@@ -379,7 +379,7 @@ function storage.deleteIndex(uuid)
 		local conflictuuids = {}
 		while line~=nil do
 			local data = explode(",",line)
-			if data[1] ~= uuid then table.insert(conflictuuids, line) end
+			if tohex(data[1]) ~= uuid then table.insert(conflictuuids, line) end
 			line = file:read()
 		end
 		file:close()
@@ -387,12 +387,12 @@ function storage.deleteIndex(uuid)
 		if #conflictuuids == 0 then -- this was the only uuid in the conflict --> we must remove the index entry
 			local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
 			local indexFile = io.open(getMount(storage.indexDisk).."/index.txt","a")
-			indexFile:seek("set",20*num)
-        	indexFile:write("0000000000000000,00\n")
+			indexFile:seek("set",36*num)
+        	indexFile:write("00000000000000000000000000000000,00\n")
 			indexFile:close()
 		else -- there were more conflicts: we write the other ones and we save the entry as the first one
 			local arr = explode(",",conflictuuids[1])
-			file = io.open(getMount(storage.indexDisk).."/conflicts/"..(arr[1])..".txt","w")
+			file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","w")
 			for _,v in ipairs(conflictuuids) do
 				file:write(v.."\n")
 			end
@@ -400,7 +400,7 @@ function storage.deleteIndex(uuid)
 
 			local num = hexMod(tohex(storage.data.sha256(arr[1])),150000)
 			local indexFile = io.open(getMount(storage.indexDisk).."/index.txt","a")
-			indexFile:seek("set",20*num)
+			indexFile:seek("set",36*num)
         	indexFile:write(conflictuuids[1])
 			indexFile:close()
 		end
@@ -409,21 +409,21 @@ function storage.deleteIndex(uuid)
 	
 	local var = storage.loadRawIndex(uuid)
 	var = explode(",",var)
-	if var[1]~=uuid then -- Scenario 2: there are conflicts for this index, but the name of the conflict is not equal to this
-		local f = io.open(getMount(storage.indexDisk).."/conflicts/"..var[1]..".txt","r")
+	if tohex(var[1])~=uuid then -- Scenario 2: there are conflicts for this index, but the name of the conflict is not equal to this
+		local f = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(var[1])..".txt","r")
 		if f==nil then return end
 		local conflictuuids = {}
 		local line = f:read()
 		while line~=nil do
 			local data = explode(",",line)
-			if data[1] ~= uuid then
+			if tohex(data[1]) ~= uuid then
 				table.insert(conflictuuids, line)
 			end
 			line = f:read()
 		end
 		f:close()
-		filesys.remove(getMount(storage.indexDisk).."/conflicts/"..var[1]..".txt")
-		f = io.open(getMount(storage.indexDisk).."/conflicts/"..var[1]..".txt","w")
+		filesys.remove(getMount(storage.indexDisk).."/conflicts/"..tohex(var[1])..".txt")
+		f = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(var[1])..".txt","w")
 		for _,v in ipairs(conflictuuids) do
 			f:write(v.."\n")
 		end
@@ -431,8 +431,8 @@ function storage.deleteIndex(uuid)
 	else -- Scenario 3: there are no conflicts for this index
 		local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
 		local indexFile = io.open(getMount(storage.indexDisk).."/index.txt","a")
-		indexFile:seek("set",20*num)
-        indexFile:write("0000000000000000,00\n")
+		indexFile:seek("set",36*num)
+        indexFile:write("00000000000000000000000000000000,00\n")
 		indexFile:close()
 	end
 end
