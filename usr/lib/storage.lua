@@ -26,6 +26,7 @@ function storage.generateIndex()
         file:write("0000000000000000,00\n")
     end
     file:close()
+	os.execute("mkdir "..getMount(storage.indexDisk).."/conflicts")
 end
 
 function storage.reloadDisks()
