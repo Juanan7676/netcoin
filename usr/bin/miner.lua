@@ -7,8 +7,6 @@ serial = require("serialization")
 require("math.BigNum")
 require("common")
 
-math.randomseed(os.time())
-
 function tohex(str)
     return (str:gsub('.', function (c)
         return string.format('%02X', string.byte(c))
@@ -52,6 +50,7 @@ function start()
         while not encontrado do
             if (jobStart==true) then
                 local start = os.time()
+                math.randomseed(tonumber(tohex(data.random(4)),16))
                 res,val = minar(headers,target, sha256, BigNum, HASHES_PER_CYCLE)
                 if res==true then break end
                 local nend = os.time()
