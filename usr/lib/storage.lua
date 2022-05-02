@@ -324,6 +324,7 @@ function storage.loadIndex(uuid)
     if arr[1]=="0000000000000000" then file:close() return nil end
     if arr[1]~=uuid then -- Solve conflict
         local aux = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","r")
+		if aux==nil then file:close() return nil end
         local line = aux:read()
         local ret = nil
         while line ~= nil do
