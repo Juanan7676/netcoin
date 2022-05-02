@@ -69,7 +69,7 @@ thread.create( function()
                 jreq = client
                 difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
                 print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..tostring(difficulty))
-                modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
+                modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
             elseif parsed[1]=="HR" then
                 hashrates[client] = tonumber(parsed[2])
             elseif parsed[1]=="NF" then
@@ -86,7 +86,7 @@ thread.create( function()
 end )
 
 while true do
-    if block ~= nil then modem.broadcast(7001,block.uuid .. block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target)) end
+    if block ~= nil then modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target)) end
     local sum = 0
     for k,v in pairs(hashrates) do
         sum = sum + v
