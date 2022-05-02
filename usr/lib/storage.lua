@@ -358,6 +358,7 @@ function storage.saveIndex(uuid,disk)
     local arr = explode(",",i)
     if arr[1]~="0000000000000000" and arr[1]~=uuid then -- Solve conflict
         local file = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","a")
+		if file==nil then file = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","w") end
         file:write(uuid..","..disk.."\n")
         file:close()
     else
