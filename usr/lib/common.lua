@@ -61,6 +61,13 @@ function randomUUID(length)
     return str
 end
 
+function appendZeros(str, desiredLength)
+    while #str < desiredLength do
+        str = "0" .. str
+    end
+    return str
+end
+
 function minar(h, target, hashFunc, BigNum, iterations)
     local nonce = randomUUID(16)
     h = tohex(hashFunc(h))

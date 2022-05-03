@@ -216,19 +216,20 @@ function storage.editDisks()
 	end
 	print("Updating disks.txt...")
 	local diskw = io.open("disks.txt","w")
-	diskw:write((oidisk and oidisk.name or "0")..","..nidisk.addr.."\n")
-	diskw:write((owdisk and owdisk.name or "1")..","..nwdisk.addr.."\n")
+	diskw:write((oidisk and oidisk.name or "00")..","..nidisk.addr.."\n")
+	diskw:write((owdisk and owdisk.name or "01")..","..nwdisk.addr.."\n")
 	local i = 2
 	for _,j in ipairs(availDisks) do
 		if j.usage == 3 then
 			if j.oldusage == 1 then
-				diskw:write((nidisk and nidisk.name or tostring(i))..","..j.addr.."\n")
+				diskw:write((nidisk and nidisk.name or appendZeros(tostring(i)))..","..j.addr.."\n")
 			elseif j.oldusage == 2 then
-				diskw:write((nwdisk and nwdisk.name or tostring(i))..","..j.addr.."\n")
+				diskw:write((nwdisk and nwdisk.name or appendZeros(tostring(i)))..","..j.addr.."\n")
 			else
-				diskw:write((j.name or tostring(i))..","..j.addr.."\n")
+				diskw:write((j.name or appendZeros(tostring(i)))..","..j.addr.."\n")
 			end
 		end
+		i = i + 1
 	end
 	diskw:close()
 	print("Reloading disk configuration...")
