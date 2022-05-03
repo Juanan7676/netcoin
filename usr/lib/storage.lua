@@ -320,14 +320,14 @@ function storage.loadIndex(uuid)
 
 	local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
     file:seek("set",36*num)
-    local data = file:read()
+    local data = file:read(35)
     local arr = explode(",",data)
 
     if arr[1]=="00000000000000000000000000000000" then file:close() return nil end
     if tohex(arr[1])~=uuid then -- Solve conflict
         local aux = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","r")
 		if aux==nil then file:close() return nil end
-        local line = aux:read()
+        local line = aux:read(35)
         local ret = nil
         while line ~= nil do
             local tmp = explode(",",line)
@@ -335,7 +335,8 @@ function storage.loadIndex(uuid)
                 ret = line
                 break
             end
-            line = aux:read()
+			aux:read(1)
+            line = aux:read(35)
         end
         aux:close()
         file:close()
@@ -350,7 +351,7 @@ function storage.loadRawIndex(uuid)
     
     local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
 	file:seek("set",36*num)
-    local data = file:read()
+    local data = file:read(35)
     file:close()
     return data
 end
@@ -358,7 +359,7 @@ end
 function storage.saveIndex(uuid,disk)
     local i = storage.loadRawIndex(uuid) or "00000000000000000000000000000000"
     local arr = explode(",",i)
-    if arr[1]~="00000000000000000000000000000000" and tohex(arr[1])~=uuid then -- Solve conflict
+    if tohex(arr[1])~="00000000000000000000000000000000" and tohex(arr[1])~=uuid then -- Solve conflict
         local file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","a")
 		if file==nil then file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","w") end
         file:write(fromhex(uuid)..","..disk.."\n")
@@ -376,12 +377,13 @@ function storage.deleteIndex(uuid)
 	-- Scenario 1: there are conflicts for this index, and the name of the conflict is equal to this
 	local file = io.open(getMount(storage.indexDisk).."/conflicts/"..uuid..".txt","r")
 	if file ~= nil then
-		local line = file:read()
+		local line = file:read(35)
 		local conflictuuids = {}
 		while line~=nil do
 			local data = explode(",",line)
 			if tohex(data[1]) ~= uuid then table.insert(conflictuuids, line) end
-			line = file:read()
+			file:read(1)
+			line = file:read(35)
 		end
 		file:close()
 		filesys.remove(getMount(storage.indexDisk).."/conflicts/"..uuid..".txt")
@@ -414,13 +416,14 @@ function storage.deleteIndex(uuid)
 		local f = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(var[1])..".txt","r")
 		if f==nil then return end
 		local conflictuuids = {}
-		local line = f:read()
+		local line = f:read(35)
 		while line~=nil do
 			local data = explode(",",line)
 			if tohex(data[1]) ~= uuid then
 				table.insert(conflictuuids, line)
 			end
-			line = f:read()
+			f:read(1)
+			line = f:read(35)
 		end
 		f:close()
 		filesys.remove(getMount(storage.indexDisk).."/conflicts/"..tohex(var[1])..".txt")
