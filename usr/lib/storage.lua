@@ -222,9 +222,9 @@ function storage.editDisks()
 	for _,j in ipairs(availDisks) do
 		if j.usage == 3 then
 			if j.oldusage == 1 then
-				diskw:write((nidisk and nidisk.name or appendZeros(tostring(i)))..","..j.addr.."\n")
+				diskw:write((nidisk and nidisk.name or appendZeros(tostring(i), 2))..","..j.addr.."\n")
 			elseif j.oldusage == 2 then
-				diskw:write((nwdisk and nwdisk.name or appendZeros(tostring(i)))..","..j.addr.."\n")
+				diskw:write((nwdisk and nwdisk.name or appendZeros(tostring(i), 2))..","..j.addr.."\n")
 			else
 				diskw:write((j.name or appendZeros(tostring(i)))..","..j.addr.."\n")
 			end
