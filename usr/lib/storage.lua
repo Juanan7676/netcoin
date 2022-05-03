@@ -226,7 +226,7 @@ function storage.editDisks()
 			elseif j.oldusage == 2 then
 				diskw:write((nwdisk and nwdisk.name or appendZeros(tostring(i), 2))..","..j.addr.."\n")
 			else
-				diskw:write((j.name or appendZeros(tostring(i)))..","..j.addr.."\n")
+				diskw:write((j.name or appendZeros(tostring(i), 2))..","..j.addr.."\n")
 			end
 		end
 		i = i + 1
