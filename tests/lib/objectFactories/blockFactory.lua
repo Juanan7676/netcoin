@@ -93,7 +93,7 @@ BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previo
     function BlockFactory:calculateValidNonce()
         local hash = false
         local found = false
-        local headers = self.uuid .. self.height .. self.timestamp .. self.previous .. hashTransactions(self.transactions)
+        local headers = self.height .. self.timestamp .. self.previous .. hashTransactions(self.transactions)
         while not found do
             found, hash = mine(headers, self.target)
         end
