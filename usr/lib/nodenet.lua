@@ -13,7 +13,7 @@ require("minerNode")
 local nodenet = {}
 
 function nodenet.sendClient(c,p,msg)
-    modem.send(c,p,cache.myPort,msg)
+    modem.send(c,tonumber(p),cache.myPort,msg)
 end
 
 function nodenet.connectClient(c,p)
