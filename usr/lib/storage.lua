@@ -351,7 +351,6 @@ end
 
 function storage.loadRawIndex(uuid)
     local file = io.open(getMount(storage.indexDisk).."/index.txt","rb")
-    
     local num = hexMod(tohex(storage.data.sha256(uuid)),150000)
 	file:seek("set",34*num)
     local data = file:read(34)
@@ -362,7 +361,7 @@ end
 function storage.saveIndex(uuid,disk)
     local i = storage.loadRawIndex(uuid) or "00000000000000000000000000000000"
     local key,_ = decomposePair(i)
-    if tohex(key)~="00000000000000000000000000000000" and tohex(key)~=uuid then -- Solve conflict
+    if key~="00000000000000000000000000000000" and tohex(key)~=uuid then -- Solve conflict
         local file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(key)..".txt","a")
 		if file==nil then file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(key)..".txt","w") end
         file:write(uuid..","..disk.."\n")
@@ -397,7 +396,7 @@ function storage.deleteIndex(uuid)
 			indexFile:close()
 		else -- there were more conflicts: we write the other ones and we save the entry as the first one
 			local arr = explode(",",conflictuuids[1])
-			file = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(arr[1])..".txt","w")
+			file = io.open(getMount(storage.indexDisk).."/conflicts/"..arr[1]..".txt","w")
 			for _,v in ipairs(conflictuuids) do
 				file:write(v.."\n")
 			end
