@@ -82,10 +82,12 @@ BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previo
 
     function BlockFactory:addTransaction(t)
         table.insert(self.transactions, t)
+        return self
     end
 
     function BlockFactory:calculateUUID()
         self.uuid = tohex(sha256(self.height .. self.timestamp .. self.previous .. hashTransactions(self.transactions)))
+        return self
     end
 
     function BlockFactory:calculateValidNonce()
