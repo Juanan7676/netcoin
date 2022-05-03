@@ -419,7 +419,7 @@ function storage.deleteIndex(uuid)
 		local line = f:read()
 		while line~=nil do
 			local data = explode(",",line)
-			if data ~= uuid then
+			if data[1] ~= uuid then
 				table.insert(conflictuuids, line)
 			end
 			line = f:read()
