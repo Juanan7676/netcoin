@@ -23,6 +23,19 @@ function mine(h, target)
     end
 end
 
+function hashTransactions(transaction_table)
+    local hash = ""
+    table.sort(transaction_table, function (a,b) return a.id < b.id end)
+    for _, t in ipairs(transaction_table) do
+        hash = sha256(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
+        table.sort(t.sources, function(a,b) return a < b end)
+        for _,v in ipairs(t.sources) do
+            hash = sha256(hash .. v)
+        end
+    end
+    return hash
+end
+
 BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previous = '', target = STARTING_DIFFICULTY, uuid = ''}
     function BlockFactory:new()
         local ret = {}
@@ -71,6 +84,10 @@ BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previo
         table.insert(self.transactions, t)
     end
 
+    function BlockFactory:calculateUUID()
+        self.uuid = tohex(sha256(self.height .. self.timestamp .. self.previous .. hashTransactions(self.transactions)))
+    end
+
     function BlockFactory:calculateValidNonce()
         local hash = false
         local found = false
@@ -99,6 +116,7 @@ BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previo
             BlockFactory:new()
                         :setHeight(0)
                         :setTarget(targets[1])
+                        :calculateUUID()
                         :calculateValidNonce()
                         :create()
         }
@@ -109,6 +127,7 @@ BlockFactory = {height = 0, nonce = '', transactions = {}, timestamp = 0, previo
                     :setHeight(k-1)
                     :setPreviousBlock(blocks[k-1])
                     :setTarget(targets[k])
+                    :calculateUUID()
                     :calculateValidNonce()
                     :create()
             )
