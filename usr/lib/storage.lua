@@ -411,7 +411,7 @@ function storage.deleteIndex(uuid)
 		return
 	end
 	
-	local key,value = storage.loadRawIndex(uuid)
+	local key,value = decomposePair(storage.loadRawIndex(uuid))
 	if tohex(key)~=uuid then -- Scenario 2: there are conflicts for this index, but the name of the conflict is not equal to this
 		local f = io.open(getMount(storage.indexDisk).."/conflicts/"..tohex(key)..".txt","r")
 		if f==nil then return end
