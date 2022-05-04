@@ -144,7 +144,7 @@ function verifyTransaction(t, up, rup, newBlocks)
         local rem = false
         local normal = false
         local utxoblock = up(v)
-        if utxoblock ~= nil then
+        if utxoblock ~= nil and utxoblock ~= false then
             block = storage.loadBlock(utxoblock)
             if block==nil then
                 if newBlocks==nil then print("stored utxo block not found on chain") return false end
@@ -155,7 +155,7 @@ function verifyTransaction(t, up, rup, newBlocks)
         end
         
         local remutxoblock = rup(v)
-        if remutxoblock ~= nil then
+        if remutxoblock ~= nil and remutxoblock ~= false then
             block = storage.loadBlock(remutxoblock)
             if block==nil then
                 if newBlocks==nil then print("stored utxo block not found on chain") return false end
