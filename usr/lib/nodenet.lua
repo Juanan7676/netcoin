@@ -112,7 +112,7 @@ function nodenet.confectionateTransaction(to, qty)
     
     if totalIN >= qty then
         t.rem = totalIN - qty
-        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem, cache.walletSK)
+        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem, cache.walletSK)
         return t
     end
     
@@ -135,7 +135,7 @@ function nodenet.confectionateTransaction(to, qty)
     
     if totalIN >= qty then
         t.rem = totalIN - qty
-        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem, cache.walletSK)
+        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem, cache.walletSK)
         return t
     end
     

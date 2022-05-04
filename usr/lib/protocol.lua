@@ -128,13 +128,22 @@ function hashTransactions(transaction_table)
     return hash
 end
 
+function concatenateSources(sources_table)
+    local ret = ""
+    table.sort(sources_table, function (a,b) return a < b end)
+    for _, t in ipairs(sources_table) do
+        ret = ret .. t
+    end
+    return t
+end
+
 function verifyTransaction(t, up, rup, newBlocks)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then return false end
     if t.qty <= 0 or t.rem < 0 then print("invalid qty or rem") return false end
     if #t.sources > 0 then
         local pk = component.data.deserializeKey(t.from,"ec-public")
         if pk==nil then print("invalid public key") return false end
-        if not component.data.ecdsa(t.id .. t.from .. t.to .. t.qty .. serial.serialize(t.sources) .. t.rem,pk, t.sig) then print("invalid signature") return false end
+        if not component.data.ecdsa(t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem,pk, t.sig) then print("invalid signature") return false end
     end
     
     if (#t.sources == 0) then return "gen" end
