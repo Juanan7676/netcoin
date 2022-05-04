@@ -142,6 +142,7 @@ function verifyTransaction(t, up, rup, newBlocks)
     for _,v in ipairs(t.sources) do
         local trans, block
         local rem = false
+        local normal = false
         local utxoblock = up(v)
         if utxoblock ~= nil then
             block = storage.loadBlock(utxoblock)
@@ -150,19 +151,21 @@ function verifyTransaction(t, up, rup, newBlocks)
                 block = searchBlockInList(newBlocks,utxoblock)
                 if block==nil then print("could not find utxo block on list") return false end
             end
-        else
-            remutxoblock = rup(v)
-            if remutxoblock==nil then print("uxto not found") return false 
-            else
-                block = storage.loadBlock(remutxoblock)
-                if block==nil then
-                    if newBlocks==nil then print("stored utxo block not found on chain") return false end
-                    block = searchBlockInList(newBlocks,remutxoblock)
-                    if block==nil then print("could not find utxo block on list") return false end
-                end
-                rem = true
-            end
+            normal = true
         end
+        
+        local remutxoblock = rup(v)
+        if remutxoblock ~= nil then
+            block = storage.loadBlock(remutxoblock)
+            if block==nil then
+                if newBlocks==nil then print("stored utxo block not found on chain") return false end
+                block = searchBlockInList(newBlocks,remutxoblock)
+                if block==nil then print("could not find utxo block on list") return false end
+            end
+            rem = true
+        end
+
+        if not rem and not normal then print("could not find utxo") return false end
         
         trans = getTransactionFromBlock(block,v)
         if trans==nil then print("transaction not found on block") return false end
