@@ -134,7 +134,7 @@ function concatenateSources(sources_table)
     for _, t in ipairs(sources_table) do
         ret = ret .. t
     end
-    return t
+    return ret
 end
 
 function verifyTransaction(t, up, rup, newBlocks)
