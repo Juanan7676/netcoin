@@ -80,6 +80,7 @@ function nodenet.reloadWallet()
         line = file:read()
 		os.sleep()
     end
+    file:close()
     updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
 end
 

@@ -46,6 +46,7 @@ function processCommand(cmd)
             local file = io.open(parsed[3],"r")
             if file==nil then print("Could not find file") return end
             cache.contacts[contact] = file:read("*a")
+            file:close()
             cache.saveContacts()
             print("Contact " .. contact .. " saved succesfully!")
         end
@@ -109,6 +110,7 @@ function processCommand(cmd)
 		else
 			local file = io.open(parsed[2],"r")
 			local d = serial.unserialize(file:read("*a") or "")
+            file:close()
 			nodenet.newBlock(cache.myIP,1,d)
 		end
 	elseif parsed[1] == "refresh" then
