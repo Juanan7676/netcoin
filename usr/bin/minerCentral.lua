@@ -51,39 +51,40 @@ end
 
 print("Contacting node, announcing our IP")
 modem.broadcast(2000,7000, "CENTRALMINER_ANNOUNCE")
-_, msg = listentonode(nil,5)
-if (msg == nil or msg ~= "OK") then 
-  print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
-  os.exit(1)
-else
-  print("Node registered ourselves succesfully, listening for new jobs")
+
+flag = false
+while not flag do
+  _, msg = listentonode(nil,5)
+  if (msg ~= nil and msg ~= "OK") then 
+    print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
+    os.exit(1)
+  else
+    print("Node registered ourselves succesfully, listening for new jobs")
+    flag = true
+  end
 end
 
-thread.create( function()
-    while true do
-        local client,msg=listen()
-        if msg~=nil then
-            local parsed = explode("####",tostring(msg))
-            if parsed[1]=="NJ" then
-                block = serial.unserialize(parsed[2])
-                jreq = client
-                difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
-                print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..tostring(difficulty))
-                modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
-            elseif parsed[1]=="HR" then
-                hashrates[client] = tonumber(parsed[2])
-            elseif parsed[1]=="NF" then
-                print("BLOCK MINED! Nonce="..parsed[2])
-                block.nonce = parsed[2]
-                modem.send(jreq,2000,7000,"NEWBLOCK####"..serial.serialize(block))
-                local _,tmp = listentonode(jreq,5)
-                if tmp==nil then print("Warning: no response from node")
-                elseif tmp=="BLOCK_ACCEPTED" then print("Block accepted")
-                else print("Block rejected by node: got " .. tmp) end
-            end
-        end
+function processNetworkMessage(signal, ...)
+  local _,_,client,_,_,_,msg = ...
+  if msg~=nil then
+    local parsed = explode("####",tostring(msg))
+    if parsed[1]=="NJ" then
+        block = serial.unserialize(parsed[2])
+        jreq = client
+        difficulty, _ = (BigNum.new(2)^BigNum.new(240))/block.target
+        print("New job: #"..block.uuid.." at height "..block.height.." difficulty "..tostring(difficulty))
+        modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target))
+    elseif parsed[1]=="HR" then
+        hashrates[client] = tonumber(parsed[2])
+    elseif parsed[1]=="NF" then
+        print("BLOCK MINED! Nonce="..parsed[2])
+        block.nonce = parsed[2]
+        modem.send(jreq,2000,7000,"NEWBLOCK####"..serial.serialize(block))
     end
-end )
+ end
+end
+
+event.listen("modem_message",processNetworkMessage)
 
 while true do
     if block ~= nil then modem.broadcast(7001,block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions), serial.serialize(block.target)) end
