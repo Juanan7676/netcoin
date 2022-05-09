@@ -64,8 +64,8 @@ while not flag do
   end
 end
 
-function processNetworkMessage(signal, ...)
-  local _,_,client,_,_,_,msg = ...
+function processNetworkMessage(...)
+  local _,_,_,client,_,_,_,msg = ...
   if msg~=nil then
     local parsed = explode("####",tostring(msg))
     if parsed[1]=="NJ" then
