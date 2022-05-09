@@ -58,7 +58,7 @@ function processCommand(cmd)
     elseif parsed[1]=="remove" then
         if #parsed ~= 2 then print("Usage: remove <contactName>")
         else
-            cache.contacts[contact] = nil
+            cache.contacts[parsed[2]] = nil
             cache.saveContacts()
             print("Operation done successfully")
         end
