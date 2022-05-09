@@ -124,6 +124,8 @@ function processCommand(cmd)
 		term.clear()
 		nodenet.reloadWallet()
 		term.setCursor(1,15)
+    elseif parsed[1] == "myip" then
+        print("IP: " .. cache.myIP)
 	elseif parsed[1] == "exit" then
 		return true
     end

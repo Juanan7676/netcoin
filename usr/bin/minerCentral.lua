@@ -34,7 +34,7 @@ end
 function listen(timeout)
     local client, msg
     
-    if(timeout==nil) then _,_,client,_,_,msg = event.pull("modem_message")
+    if timeout==nil then _,_,client,_,_,msg = event.pull("modem_message")
     else _,_,client,_,_,msg = event.pull(timeout,"modem_message") end
     
     return client, msg
@@ -43,7 +43,7 @@ end
 function listentonode(c,timeout)
     local client, msg
     
-    if(timeout==nil) then _,_,client,_,_,_,msg = event.pull("modem_message",nil,c)
+    if timeout==nil then _,_,client,_,_,_,msg = event.pull("modem_message",nil,c)
     else _,_,client,_,_,_,msg = event.pull(timeout,"modem_message",nil,c) end
     
     return client, msg
