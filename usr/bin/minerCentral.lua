@@ -55,12 +55,12 @@ modem.broadcast(2000,7000, "CENTRALMINER_ANNOUNCE")
 flag = false
 while not flag do
   _, msg = listentonode(nil,5)
-  if (msg ~= nil and msg ~= "OK") then 
-    print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
-    os.exit(1)
-  else
+  if msg=="OK" then
     print("Node registered ourselves succesfully, listening for new jobs")
     flag = true
+  elseif msg ~= nil then
+    print("Unable to contact masternode, aborting (got "..( msg or "nil" )..")")
+    os.exit(1)
   end
 end
 
