@@ -83,8 +83,12 @@ function processCommand(cmd)
         else
             local contact = parsed[2]
             local file = io.open(parsed[2],"w")
-            file:write(cache.walletPK.serialize())
-            print("Public node key successfully exported")
+            if file==nil then print("Unable to open file, make sure the path is correct")
+            else
+                file:write(cache.walletPK.serialize())
+                file:close()
+                print("Public node key successfully exported")
+            end
         end
     elseif parsed[1]=="addNode" then
         if #parsed ~= 3 then print("Usage: addNode <IP> <port>")

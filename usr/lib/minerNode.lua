@@ -62,7 +62,7 @@ function genesisBlock()
     b.transactions = {}
     b.previous = ""
     b.height = 0
-    b.target = BigNum.new(2)^240
+    b.target = STARTING_DIFFICULTY
     
     local rt = {}
     rt.id = randomUUID(16)
