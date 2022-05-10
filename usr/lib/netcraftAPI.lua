@@ -1,5 +1,6 @@
 -- NetCraft API by Juanan76
 local event = require("event")
+local computer = require("computer")
 
 local net = {}
 
