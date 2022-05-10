@@ -30,15 +30,6 @@ function newBlock(block)
     local fbago = getPrevChain(block,49)
     b.target = getNextDifficulty(fbago,block)
     
-    for k,v in pairs(cache.transpool) do
-        local result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
-        if (result~=false and result~="gen") then
-            table.insert(b.transactions,v)
-        else
-            cache.transpool[k] = nil
-        end
-    end
-    
     local rt = {}
     rt.id = randomUUID(16)
     rt.from = "gen"
@@ -48,6 +39,22 @@ function newBlock(block)
     rt.rem = 0
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. concatenateSources(rt.sources).. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
+
+    b.uuid = "PLACEHOLDERFOR64BYTES---0000000000000000000000000000000000000000"
+    
+    for k,v in pairs(cache.transpool) do
+        local result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
+        if (result~=false and result~="gen") then
+            local copy = b
+            table.insert(b.transactions,v)
+            if #serial.serialize(b) > 5000 then -- maximum block size reached
+                b.transactions[#b.transactions] = nil
+                break
+            end
+        else
+            cache.transpool[k] = nil
+        end
+    end
 
     b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hashTransactions(b.transactions)))
 

@@ -249,6 +249,8 @@ function verifyBlock(block)
 
     if (block.height < 0) then print("invalid height") return false end
     if (block.timestamp > os.time()) then print("timestamp from the future") return false end
+
+    if (#serial.serialize(block) > 5000) then print("block too large") return false end
     
     if block.height > 0 then --Exception: there's no previous block for genesis block!
         local prev = getPrevChain(block,1)
