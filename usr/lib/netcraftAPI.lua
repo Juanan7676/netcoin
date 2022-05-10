@@ -16,14 +16,14 @@ function net.filterOnlyNetMsg()
 end
 
 function net.handleEvent(filterFunc, timeout)
-    local start = os.time()
+    local start = computer.uptime()
     while true do
         local args = table.pack(event.pull(1))
         if args[1] ~= nil then
             if filterFunc(table.unpack(args)) then return table.unpack(args) end
             event.push(table.unpack(args))
         end
-        if timeout~=nil and os.time()-start >= timeout then return nil end
+        if timeout~=nil and computer.uptime()-start >= timeout then return nil end
     end
 end
 
