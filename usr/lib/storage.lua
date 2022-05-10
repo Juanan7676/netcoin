@@ -445,19 +445,19 @@ function storage.loadBlock(uuid)
     if disk==nil then return nil, "nonexistent index" end
 	disk = storage.disks[disk]
 	if disk==nil then return nil, "invalid index" end
-    local file = io.open(getMount(disk).."/"..uuid..".txt","r")
-    local block = (serial.unserialize(file:read("*a")))
+    local file = io.open(getMount(disk).."/"..uuid..".txt","rb")
+    local block = (serial.unserialize(storage.data.inflate(file:read("*a"))))
     file:close()
     return block
 end
 
 function storage.saveBlock(block)
     if storage.loadBlock(block.uuid) ~= nil then return end
-    local data = serial.serialize(block)
+    local data = storage.data.deflate(serial.serialize(block))
     for k,d in pairs(storage.disks) do
         local hdd = component.proxy(component.get(d))
         if ( hdd.spaceTotal() - hdd.spaceUsed() >= data:len() ) then
-            local file = io.open(getMount(d).."/"..(block.uuid)..".txt","w")
+            local file = io.open(getMount(d).."/"..(block.uuid)..".txt","wb")
             file:write(data)
             file:close()
             storage.saveIndex(block.uuid,k)
