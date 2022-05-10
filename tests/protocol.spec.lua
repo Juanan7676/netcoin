@@ -62,7 +62,7 @@ function test_getNextDifficulty_2()
     lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(240))
 end
 
--- Difficulty is divided by 4 if block is 0 mod 50 but is exactly at 1000 minutes elapsed (quadruple target time)
+-- Target is multiplied by 4 if block is 0 mod 50 but is exactly at 1000 minutes elapsed (quadruple target time)
 function test_getNextDifficulty_3()
     local fbago = {
         height=50,
@@ -82,10 +82,10 @@ function test_getNextDifficulty_3()
         target = 0,
         transactions={},
     }
-    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(238))
+    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(242))
 end
 
--- Difficulty is quadrupled if block is 0 mod 50 but is exactly at 62.5 minutes elapsed (double target time)
+-- Target is divided by 4 if block is 0 mod 50 but is exactly at 62.5 minutes elapsed (x0.5 target time)
 function test_getNextDifficulty_4()
     local fbago = {
         height=50,
@@ -105,7 +105,7 @@ function test_getNextDifficulty_4()
         target = BigNum.new(2)^BigNum.new(240),
         transactions={},
     }
-    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(242))
+    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(238))
 end
 
 -- Difficulty cannot increase more than x4
@@ -128,7 +128,7 @@ function test_getNextDifficulty_5()
         target = 0,
         transactions={},
     }
-    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(242))
+    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(238))
 end
 
 -- Difficulty cannot decrease more than x4
@@ -151,7 +151,7 @@ function test_getNextDifficulty_6()
         target = BigNum.new(2)^BigNum.new(240),
         transactions={},
     }
-    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(238))
+    lu.assertEquals(getNextDifficulty(fbago, newBlock), BigNum.new(2)^BigNum.new(242))
 end
 
 -- Difficulty of genesis block is 2^240

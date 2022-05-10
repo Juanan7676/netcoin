@@ -88,7 +88,7 @@ function getNextDifficulty(fbago,block)
     if block.height%50 ~= 0 or block.height==0 then return block.target end
     
     local timeDiff = (block.timestamp - fbago.timestamp)*1000/60/60/20
-    local correctionFactor = (15000/timeDiff)
+    local correctionFactor = (timeDiff/15000)
     if correctionFactor > 4 then correctionFactor = 4 end
     if correctionFactor < 0.25 then correctionFactor = 0.25 end
     local quotient, _ = (fbago.target * BigNum.new(correctionFactor*100))/BigNum.new(100)
