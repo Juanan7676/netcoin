@@ -38,11 +38,11 @@ function net.listen(modem, port, timeout)
 end
 
 
-function net.listentoclient(modem, port, client, timeout)
+function net.listentoclient(modem, port, cip, timeout)
     modem.open(port)
     local client, clientPort, msg
 
-    _,_,client,_,_,clientPort,msg = net.handleEvent(net.filterByClient(client), timeout)
+    _,_,client,_,_,clientPort,msg = net.handleEvent(net.filterByClient(cip), timeout)
 
     return client, clientPort, msg
 end
