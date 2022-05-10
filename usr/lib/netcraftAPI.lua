@@ -19,7 +19,7 @@ end
 function net.handleEvent(filterFunc, timeout)
     local start = computer.uptime()
     while true do
-        local args = table.pack(event.pull(1))
+        local args = table.pack(event.pull(1, "modem_message")) -- design limitation: in case there are other events, like the player typing, timeout will not work!!
         if args[1] ~= nil then
             if filterFunc(table.unpack(args)) then return table.unpack(args) end
             event.push(table.unpack(args))
