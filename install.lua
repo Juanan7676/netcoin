@@ -1,4 +1,4 @@
-baseDir = 'https://raw.githubusercontent.com/Juanan7676/netcoin/master/'
+local baseDir = 'https://raw.githubusercontent.com/Juanan7676/netcoin/master/'
 
 os.execute('mkdir usr')
 os.execute('mkdir usr/bin')
