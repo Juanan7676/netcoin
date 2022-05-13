@@ -686,9 +686,9 @@ function consolidateBlock(block)
     if (block.height % 10 == 0) then
         storage.cacheutxo()
     end -- Every 10 blocks do an UTXO cache
-    storage.savePendingTransactions()
-    storage.saveRecentTransactions()
-    storage.saveBalances()
+    cache.savePendingTransactions()
+    cache.saveRecentTransactions()
+    cache.saveBalances()
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
@@ -708,9 +708,9 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
-    storage.savePendingTransactions()
-    storage.saveRecentTransactions()
-    storage.saveBalances()
+    cache.savePendingTransactions()
+    cache.saveRecentTransactions()
+    cache.saveBalances()
     return true
 end
 
@@ -730,8 +730,8 @@ function reconstructUTXOFromCache(newblocks, lastblock)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
-    storage.savePendingTransactions()
-    storage.saveRecentTransactions()
-    storage.saveBalances()
+    cache.savePendingTransactions()
+    cache.saveRecentTransactions()
+    cache.saveBalances()
     return true
 end
