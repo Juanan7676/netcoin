@@ -22,12 +22,14 @@ cache.loadlastBlock()
 print("Synchronizing with network...")
 nodenet.sync()
 print("Sync done")
-cache.cb = 0
-cache.tb = 0
 cache.rt = {}
 cache.pt = {}
+cache.loadBalances()
+cache.loadPendingTransactions()
+cache.loadRecentTransactions()
+cache.loadTranspool()
 cache.loadContacts()
-nodenet.reloadWallet()
+--nodenet.reloadWallet()
 term.setCursor(1,15)
 
 local t = thread.create(function()
@@ -124,7 +126,7 @@ function processCommand(cmd)
 	elseif parsed[1] == "setup" then
 		storage.setup(true)
 		term.clear()
-		nodenet.reloadWallet()
+		--nodenet.reloadWallet()
 		term.setCursor(1,15)
     elseif parsed[1] == "myip" then
         print("IP: " .. cache.myIP)

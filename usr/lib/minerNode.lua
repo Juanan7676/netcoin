@@ -6,7 +6,6 @@ require("protocol")
 protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
 
 require("wallet")
-cache.transpool = {}
 
 function newTransaction(t)
     cache.transpool[t.id] = t
@@ -49,7 +48,6 @@ function newBlock(block)
             table.insert(b.transactions,v)
             if #serial.serialize(b) > 5000 then -- maximum block size reached
                 b.transactions[#b.transactions] = nil
-                break
             end
         else
             cache.transpool[k] = nil
