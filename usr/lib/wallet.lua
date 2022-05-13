@@ -55,7 +55,7 @@ function printTransaction(gpu,x,y,t,conf)
     local to = "My wallet"
     if #t.sources==0 then from = "Mining reward"
     elseif t.from ~= cache.walletPK.serialize() then from = string.sub(t.from,1,6) .. (#t.from > 6 and "..." or "") end
-    
+
     if t.to ~= cache.walletPK.serialize() then to = string.sub(t.to,1,6) .. (#t.to > 6 and "..." or "") end
     
     if (conf==nil) then text(gpu,x,y,7,from .. " -> " .. to .. "   " .. t.qty/1000000 .. " NTC")
@@ -80,7 +80,7 @@ function updateScreen(cb,tb,rt,pt)
     text(gpu,1,7,2,"Pending transactions ("..#pt..")")
     counter = 2
     for k,v in pairs(pt) do
-        printTransaction(gpu,1,7+counter,v[1],v[2])
+        printTransaction(gpu,1,7+counter,v,v.confirmations)
         counter = counter + 1
     end
     
