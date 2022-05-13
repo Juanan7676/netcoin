@@ -203,7 +203,7 @@ function nodenet.dispatchNetwork()
             for _,client in pairs(cache.nodes) do
                 nodenet.sendClient(client.ip, tonumber(client.port), "NEWBLOCK####"..parsed[2])
             end
-            --nodenet.reloadWallet()
+            updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
         end
     elseif parsed[1]=="NEWNODE" then
         local node = parsed[2]
