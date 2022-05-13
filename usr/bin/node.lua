@@ -29,7 +29,7 @@ cache.loadPendingTransactions()
 cache.loadRecentTransactions()
 cache.loadTranspool()
 cache.loadContacts()
-updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
+updateScreen(cache.tb,cache.pb,cache.lt,cache.pt)
 term.setCursor(1,15)
 
 local t = thread.create(function()
@@ -117,7 +117,7 @@ function processCommand(cmd)
 		end
 	elseif parsed[1] == "refresh" then
 		term.clear()
-		updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
+		updateScreen(cache.tb,cache.pb,cache.lt,cache.pt)
 		term.setCursor(1,15)
 	elseif parsed[1] == "listNodes" then
 		for i,j in pairs(cache.nodes) do
@@ -126,7 +126,7 @@ function processCommand(cmd)
 	elseif parsed[1] == "setup" then
 		storage.setup(true)
 		term.clear()
-		updateScreen(cache.cb,cache.tb,cache.lt,cache.pt)
+		updateScreen(cache.tb,cache.pb,cache.lt,cache.pt)
 		term.setCursor(1,15)
     elseif parsed[1] == "myip" then
         print("IP: " .. cache.myIP)
