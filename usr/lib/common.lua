@@ -157,14 +157,46 @@ function appendZeros(str, desiredLength)
     return str
 end
 
-function minar(h, target, hashFunc, BigNum, iterations)
+function trimZeros(str)
+    local cp = str
+    local remove = string.byte("0")
+    for idx = 1, #cp do
+        if cp:byte(1) == remove then
+            cp = cp:sub(2, -1)
+        else
+            return cp
+        end
+    end
+    return "0"
+end
+
+function compareHex(hex1, hex2)
+    local h1 = trimZeros(hex1)
+    local h2 = trimZeros(hex2)
+    if #h1 > #h2 then
+        return 1
+    elseif #h1 < #h2 then
+        return -1
+    else
+        for idx = 1, #h1 do
+            if h1:byte(idx) < h2:byte(idx) then
+                return -1
+            elseif h1:byte(idx) > h2:byte(idx) then
+                return 1
+            end
+        end
+    end
+    return 0
+end
+
+function minar(h, target, hashFunc, iterations)
     local nonce = randomUUID(16)
     h = tohex(hashFunc(h))
     while true do
         for k = 1, iterations do
             local hash = hashFunc(h .. nonce)
             if hash ~= nil then
-                if (BigNum.fromHex(tohex(hash)) <= target) then
+                if (compareHex(tohex(hash), target) < 0) then
                     return true, nonce
                 end
                 nonce = randomUUID(16)

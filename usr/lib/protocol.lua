@@ -145,8 +145,10 @@ function cache.updateTransactionCache()
                 cache.tb = cache.tb - v.qty
             end
             cache.pt[k] = nil
-            table.remove(cache.rt, 1)
-            table.insert(cache.rt, v)
+            if #cache.rt >= 10 then
+                table.remove(cache.rt, 1)
+                table.insert(cache.rt, v)
+            end
         else
             cache.pt[k].confirmations = v.confirmations + 1
         end
@@ -189,7 +191,7 @@ function getNextDifficulty(fbago, block)
     if correctionFactor < 0.25 then
         correctionFactor = 0.25
     end
-    local quotient, _ = (fbago.target * BigNum.new(correctionFactor * 100)) / BigNum.new(100)
+    local quotient, _ = (fbago.target * BigNum.new(correctionFactor * 100)) // BigNum.new(100)
     return quotient
 end
 
