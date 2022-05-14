@@ -202,7 +202,6 @@ function minar(h, target, hashFunc, iterations)
                 end
                 nonce = randomUUID(16)
             end
-            os.sleep(0) -- yield to avoid a crash
         end
         return false, false
     end
