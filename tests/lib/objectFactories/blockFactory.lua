@@ -99,9 +99,8 @@ end
 function BlockFactory:calculateValidNonce()
     local hash = false
     local found = false
-    local headers = self.height .. self.timestamp .. self.previous .. hashTransactions(self.transactions)
     while not found do
-        found, hash = minar(headers, BigNum.toHex(self.target), sha256, 1000)
+        found, hash = minar(self.uuid, BigNum.toHex(self.target), sha256, 1000)
     end
     self.nonce = hash
     return self

@@ -192,7 +192,6 @@ end
 
 function minar(h, target, hashFunc, iterations)
     local nonce = randomUUID(16)
-    h = tohex(hashFunc(h))
     while true do
         for k = 1, iterations do
             local hash = hashFunc(h .. nonce)

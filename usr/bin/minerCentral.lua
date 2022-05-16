@@ -83,7 +83,7 @@ function processNetworkMessage(...)
       print("New job: #" .. block.uuid .. " at height " .. block.height .. " difficulty " .. tostring(difficulty))
       modem.broadcast(
         7001,
-        block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions),
+        block.uuid,
         BigNum.toHex(BigNum.new(block.target))
       )
     elseif parsed[1] == "HR" then
@@ -102,7 +102,7 @@ while true do
   if block ~= nil then
     modem.broadcast(
       7001,
-      block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions),
+      block.uuid,
       BigNum.toHex(BigNum.new(block.target))
     )
   end
