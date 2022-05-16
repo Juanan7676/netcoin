@@ -79,13 +79,9 @@ function processNetworkMessage(...)
     if parsed[1] == "NJ" then
       block = serial.unserialize(parsed[2])
       jreq = client
-      difficulty, _ = (BigNum.new(2) ^ BigNum.new(240)) // block.target
+      difficulty, _ = (BigNum.new(2) ^ BigNum.new(240) * 100) // block.target
       print("New job: #" .. block.uuid .. " at height " .. block.height .. " difficulty " .. tostring(difficulty))
-      modem.broadcast(
-        7001,
-        block.uuid,
-        BigNum.toHex(BigNum.new(block.target))
-      )
+      modem.broadcast(7001, block.uuid, BigNum.toHex(BigNum.new(block.target)))
     elseif parsed[1] == "HR" then
       hashrates[client] = tonumber(parsed[2])
     elseif parsed[1] == "NF" then
@@ -100,11 +96,7 @@ event.listen("modem_message", processNetworkMessage)
 
 while true do
   if block ~= nil then
-    modem.broadcast(
-      7001,
-      block.uuid,
-      BigNum.toHex(BigNum.new(block.target))
-    )
+    modem.broadcast(7001, block.uuid, BigNum.toHex(BigNum.new(block.target)))
   end
   local sum = 0
   for k, v in pairs(hashrates) do
