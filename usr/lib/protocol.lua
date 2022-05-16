@@ -621,7 +621,7 @@ function updateutxo(block)
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
             storage.savewalletremutxo(t.id, block.uuid)
             cache.pb = cache.pb + t.rem
-            trans.confirmations = 0
+            t.confirmations = 0
             cache.pt[t.id] = t
         end
     end
@@ -677,7 +677,7 @@ function updatetmputxo(block)
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
             storage.tmpsavewalletremutxo(t.id, block.uuid)
             cache._pb = cache._pb + t.rem
-            trans.confirmations = 0
+            t.confirmations = 0
             cache._pt[t.id] = t
         end
     end
