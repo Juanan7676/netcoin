@@ -19,9 +19,6 @@ cache.myPort = 2000
 cache.minerNode = false
 cache.minerControl=""
 cache.loadlastBlock()
-print("Synchronizing with network...")
-nodenet.sync()
-print("Sync done")
 cache.rt = {}
 cache.pt = {}
 cache.loadBalances()
@@ -29,6 +26,9 @@ cache.loadPendingTransactions()
 cache.loadRecentTransactions()
 cache.loadTranspool()
 cache.loadContacts()
+print("Synchronizing with network...")
+nodenet.sync()
+print("Sync done")
 updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
 term.setCursor(1,15)
 
