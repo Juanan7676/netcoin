@@ -381,14 +381,14 @@ function getPrevList(block, blocks, n)
     local start = 0
     for i = 1, #blocks do
         if blocks[i].uuid == block.uuid then
-            start = i
+            start = i - 1
             break
         end
     end
     --assert(start ~= 0)
 
     for k = 1, n do
-        local tmp = blocks[k + start]
+        local tmp = blocks[#blocks - start - k]
         if tmp == nil then
             fbago = storage.loadBlock(fbago.previous)
             if fbago == nil then
