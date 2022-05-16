@@ -97,7 +97,7 @@ function nodenet.reloadWallet()
 end
 
 function nodenet.confectionateTransaction(to, qty)
-    if (qty > cache.cb) then
+    if (qty > cache.tb) then
         return nil
     end
     local t = {}
