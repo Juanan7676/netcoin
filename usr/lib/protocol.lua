@@ -147,8 +147,8 @@ function cache.updateTransactionCache()
             cache.pt[k] = nil
             if #cache.rt >= 10 then
                 table.remove(cache.rt, 1)
-                table.insert(cache.rt, v)
             end
+            table.insert(cache.rt, v)
         else
             cache.pt[k].confirmations = v.confirmations + 1
         end
@@ -164,7 +164,9 @@ function cache.updateTmpTransactionCache()
                 cache._tb = cache._tb - v.qty
             end
             cache._pt[k] = nil
-            table.remove(cache._rt, 1)
+            if #cache._rt >= 10 then
+                table.remove(cache._rt, 1)
+            end
             table.insert(cache._rt, v)
         else
             cache._pt[k].confirmations = v.confirmations + 1
