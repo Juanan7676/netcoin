@@ -361,7 +361,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
     end
     if
         chain.uuid == "" or
-            (((lb.height - lb.height % 10) ~= (chain.height - chain.height % 10)) or recv[#recv].height == 0)
+            (((lb.height - lb.height % 10) ~= (block.height - block.height % 10)) or recv[#recv].height == 0)
      then
         local result = reconstructUTXOFromZero(recv, block)
         if (not result) then
