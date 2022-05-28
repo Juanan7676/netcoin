@@ -3,7 +3,8 @@ local utxos = {}
 local hashService = require("math.hashService")
 
 function addUtxo(utx)
-    local proof = {h = 0, hashes = {}}
+    local proof = {index=0, hashes = {}}
+    setmetatable(proof.hashes,{__len=function() return -1 end}) -- In order for the alg to work, initial node should have h=-1.
     proof.baseHash = hashService.hashTransactions({utx})
     utxos[#utxos + 1] = proof
 end
@@ -11,21 +12,29 @@ end
 function deleteUtxo(proof)
     for i, v in ipairs(utxos) do
         if v.baseHash == proof.baseHash then
-            table.remove(proof, i)
+            table.remove(utxos, i)
+            return
         end
     end
 end
 
-return function(minH, maxH, minX, maxX)
-    local ret = {}
-    for _, v in ipairs(utxos) do
+function getUtxos()
+    return utxos
+end
+
+local generator = function(minH, maxH, minX, maxX)
+    local utxosCopy = copy(utxos)
+    for i, v in ipairs(utxosCopy) do
         if
             not (minH ~= nil and #v.hashes < minH) and not (maxH ~= nil and #v.hashes > maxH) and
                 not (minX ~= nil and v.index < minX) and
                 not (maxX ~= nil and v.index > maxX)
          then
-            ret[#ret + 1] = v
+            coroutine.yield(utxos[i])
         end
     end
-    return ret
+end
+
+return function(minH, maxH, minX, maxX)
+    return coroutine.wrap(function() generator(minH, maxH, minX, maxX) end)
 end

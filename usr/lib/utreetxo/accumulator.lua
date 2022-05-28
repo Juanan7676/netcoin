@@ -2,17 +2,17 @@
 ---@alias ElementNode string
 
 require("common")
+local hashService = require("math.hashService")
 
 local lib = {}
 
 local deps = {}
-function lib.construct(hashFunc, serializator)
-    deps.hashFunc = hashFunc
+function lib.construct(serializator)
     deps.serializator = serializator
 end
 
 local parent = function(str1, str2)
-    return deps.serializator(deps.hashFunc(str1 .. str2))
+    return deps.serializator(hashService.hash(str1 .. str2))
 end
 
 local calcRange = function(i, h)
@@ -27,16 +27,14 @@ function lib.add(acc, element, updatecb)
     local n = element
     local h = 0
     local r = acc[h]
-    if r == nil then
-        updatecb("add_initNil")
-    end
     while r ~= nil do
-        updatecb("add", h, r)
+        updatecb("add", h, r, n)
         n = parent(r, n)
         acc[h] = nil
         h = h + 1
         r = acc[h]
     end
+    updatecb("updateH",h - 1)
     acc[h] = n
     return acc
 end
@@ -48,26 +46,31 @@ function lib.delete(acco, proof, updatecb)
     local check = proof.baseHash
 
     while h < #proof.hashes do
-        local p = proof.hashes[h]
+        local p = proof.hashes[h + 1]
         if proof.index & (1 << h) == 0 then check = parent(check, p)
         else check = parent(p, check) end
+        h = h + 1
+    end
+    if check ~= acc[h] then return false end
+    
+    h = 0
+    while h < #proof.hashes do
+        local p = proof.hashes[h + 1]
 
         if (n ~= nil) then
-            updatecb("add", h, p)
+            updatecb("add3", h, #proof.hashes, p, n, calcRange(proof.index, h))
             n = parent(p, n)
         elseif acc[h] == nil then
             acc[h] = p
-            updatecb("promoteToRoot", h, proof.index, calcRange(proof.index, h))
+            updatecb("promoteToRoot", h, #proof.hashes, calcRange(proof.index, h))
         else
-            updatecb("add2", h, proof.index, calcRange(proof.index, h))
+            updatecb("add2", h, #proof.hashes, p, acc[h], calcRange(proof.index, h))
             n = parent(p, acc[h])
             acc[h] = nil
         end
         h = h + 1
     end
-
-    if check ~= acc[h] then return false end
-
+    updatecb("updateH",-1)
     acc[h] = n
     return acc
 end
