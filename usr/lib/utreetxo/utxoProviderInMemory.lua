@@ -1,15 +1,17 @@
+local lib = {}
+
 local utxos = {}
 
 local hashService = require("math.hashService")
 
-function addUtxo(utx)
+function lib.addUtxo(utx)
     local proof = {index=0, hashes = {}}
     setmetatable(proof.hashes,{__len=function() return -1 end}) -- In order for the alg to work, initial node should have h=-1.
     proof.baseHash = hashService.hashTransactions({utx})
     utxos[#utxos + 1] = proof
 end
 
-function deleteUtxo(proof)
+function lib.deleteUtxo(proof)
     for i, v in ipairs(utxos) do
         if v.baseHash == proof.baseHash then
             table.remove(utxos, i)
@@ -18,8 +20,12 @@ function deleteUtxo(proof)
     end
 end
 
-function getUtxos()
+function lib.getUtxos()
     return utxos
+end
+
+function lib.setUtxos(t)
+    utxos = t
 end
 
 local generator = function(minH, maxH, minX, maxX)
@@ -35,6 +41,8 @@ local generator = function(minH, maxH, minX, maxX)
     end
 end
 
-return function(minH, maxH, minX, maxX)
+function lib.iterator(minH, maxH, minX, maxX)
     return coroutine.wrap(function() generator(minH, maxH, minX, maxX) end)
 end
+
+return lib

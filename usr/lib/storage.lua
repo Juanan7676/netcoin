@@ -1,11 +1,20 @@
 local storage = {}
 
-component = require("component")
-serial = require("serialization")
-filesys = require("filesystem")
-shell = require("shell")
-term = require("term")
+local component = require("component")
+local serial = require("serialization")
+local filesys = require("filesystem")
+local shell = require("shell")
+local term = require("term")
+
 require("common")
+
+local hashService = require("math.hashService")
+hashService.constructor(function(data) return tohex(component.data.sha256(data)) end)
+
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
+local updater = require("utreetxo.updater")
+updater.constructor(utxoProvider.iterator)
+
 storage.data = component.data
 storage.disks = {}
 
@@ -13,7 +22,7 @@ local homereq = {["disks.txt"] = true, ["nodes.txt"] = "{}", ["contacts.txt"] = 
 local indexreq = {["index.txt"] = ""}
 local walletreq = {["remutxo.txt"] = "", ["utxo.txt"] = "", ["walletremutxo.txt"] = "", ["walletutxo.txt"] = ""}
 
-function getMount(addr)
+local getMount = function(addr)
 	local f = filesys.mounts()
 	for p, m in f do
 		if p.address == addr then
@@ -542,245 +551,17 @@ function storage.deleteBlock(uuid)
 	storage.deleteIndex(uuid)
 end
 
-function storage.tmpsaveutxo(uuid, buuid)
-	storage.saveutxo(uuid, buuid, true)
-end
-function storage.saveutxo(uuid, buuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt", "a")
-	if file == nil then
-		file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt", "w")
-	end
-	file:write(uuid .. "," .. buuid .. "\n")
-	file:close()
+function storage.saveutxo(tx, isWallet)
+	if isWallet then utxoProvider.addUtxo(tx) end
+	cache.acc = updater.saveutxo(cache.acc, tx)
 end
 
-function storage.tmpsavewalletutxo(uuid, buuid)
-	storage.savewalletutxo(uuid, buuid, true)
-end
-function storage.savewalletutxo(uuid, buuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo.txt", "a")
-	if file == nil then
-		file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo.txt", "w")
-	end
-	file:write(uuid .. "," .. buuid .. "\n")
-	file:close()
-end
-
-function storage.tmpsaveremutxo(uuid, buuid)
-	storage.saveremutxo(uuid, buuid, true)
-end
-function storage.saveremutxo(uuid, buuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt", "a")
-	if file == nil then
-		file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt", "w")
-	end
-	file:write(uuid .. "," .. buuid .. "\n")
-	file:close()
-end
-
-function storage.tmpsavewalletremutxo(uuid, buuid)
-	storage.savewalletremutxo(uuid, buuid, true)
-end
-function storage.savewalletremutxo(uuid, buuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo.txt", "a")
-	if file == nil then
-		file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo.txt", "w")
-	end
-	file:write(uuid .. "," .. buuid .. "\n")
-	file:close()
-end
-
-function storage.tmputxopresent(uuid)
-	return storage.utxopresent(uuid, true)
-end
-function storage.utxopresent(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt", "r")
-	if file == nil then
-		return false
-	end
-	local line = file:read()
-	while line ~= nil do
-		local arr = explode(",", line)
-		if arr[1] == uuid then
-			file:close()
-			return arr[2]
-		end
-		line = file:read()
-	end
-	file:close()
-	return false
-end
-
-function storage.tmpremutxopresent(uuid)
-	return storage.remutxopresent(uuid, true)
-end
-function storage.remutxopresent(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt", "r")
-	if file == nil then
-		return false
-	end
-	local line = file:read()
-	while line ~= nil do
-		local arr = explode(",", line)
-		if arr[1] == uuid then
-			file:close()
-			return arr[2]
-		end
-		line = file:read()
-	end
-	file:close()
-	return false
-end
-
-function storage.tmpremoveutxo(uuid)
-	storage.removeutxo(uuid, true)
-end
-function storage.removeutxo(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt", "r")
-	if file == nil then
-		return
-	end
-
-	local newfile = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo2.txt", "w")
-	local line = file:read()
-	while line ~= nil do
-		if explode(",", line)[1] ~= uuid then
-			newfile:write(line .. "\n")
-		end
-		line = file:read()
-	end
-	file:close()
-	newfile:close()
-	filesys.remove(getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt")
-	filesys.rename(
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo2.txt",
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "utxo.txt"
-	)
-end
-
-function storage.tmpremovewalletutxo(uuid)
-	storage.removewalletutxo(uuid, true)
-end
-function storage.removewalletutxo(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo.txt", "r")
-	if file == nil then
-		return
-	end
-	local newfile = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo2.txt", "w")
-	local line = file:read()
-	while line ~= nil do
-		if explode(",", line)[1] ~= uuid then
-			newfile:write(line .. "\n")
-		end
-		line = file:read()
-	end
-	file:close()
-	newfile:close()
-	filesys.remove(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo.txt")
-	filesys.rename(
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo2.txt",
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "walletutxo.txt"
-	)
-end
-
-function storage.tmpremoveremutxo(uuid)
-	storage.removeremutxo(uuid, true)
-end
-function storage.removeremutxo(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt", "r")
-	if file == nil then
-		return
-	end
-	local newfile = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo2.txt", "w")
-	local line = file:read()
-	while line ~= nil do
-		if explode(",", line)[1] ~= uuid then
-			newfile:write(line .. "\n")
-		end
-		line = file:read()
-	end
-	file:close()
-	newfile:close()
-	filesys.remove(getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt")
-	filesys.rename(
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo2.txt",
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "remutxo.txt"
-	)
-end
-
-function storage.tmpremovewalletremutxo(uuid)
-	storage.removewalletremutxo(uuid, true)
-end
-function storage.removewalletremutxo(uuid, tmp)
-	local prefix = ""
-	if tmp == true then
-		prefix = "tmp"
-	end
-
-	local file = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo.txt", "r")
-	if file == nil then
-		return
-	end
-	local newfile = io.open(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo2.txt", "w")
-	local line = file:read()
-	while line ~= nil do
-		if explode(",", line)[1] ~= uuid then
-			newfile:write(line .. "\n")
-		end
-		line = file:read()
-	end
-	file:close()
-	newfile:close()
-	filesys.remove(getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo.txt")
-	filesys.rename(
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo2.txt",
-		getMount(storage.utxoDisk) .. "/" .. prefix .. "walletremutxo.txt"
-	)
+function storage.deleteutxo(proof, isWallet)
+	local res = updater.deleteutxo(cache.acc, proof)
+	if res == false then return false end
+	cache.acc = res
+	if isWallet then utxoProvider.deleteUtxo(proof) end
+	return true
 end
 
 function storage.discardtmputxo()

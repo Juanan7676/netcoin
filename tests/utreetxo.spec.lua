@@ -12,7 +12,7 @@ hashService.constructor(sha256)
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
 
 local updater = require("utreetxo.updater")
-updater.constructor(utxoProvider)
+updater.constructor(utxoProvider.iterator)
 
 local acc = {}
 
@@ -39,7 +39,7 @@ function Test01_simpleadd()
         sources = {"utxo1", "utxo2"},
         sig = "blablabla"
     }
-    addUtxo(myutxo)
+    utxoProvider.addUtxo(myutxo)
     acc = updater.saveutxo(acc, myutxo)
     lu.assertEquals(acc[0], "335d712f953d70aed03692a14eb4fcf6945be69e208a2a96b983f3ff14d5163f")
     lu.assertEquals(acc[1], nil)
@@ -54,7 +54,7 @@ function Test02_Delete()
     local res = updater.deleteutxo(acc, proof)
     lu.assertNotEquals(res, nil)
     lu.assertNotEquals(res, false)
-    deleteUtxo(proof)
+    utxoProvider.deleteUtxo(proof)
     lu.assertEquals(utxoProvider(0, 0, nil, nil)(), nil)
 end
 
@@ -70,26 +70,26 @@ function Test03_ComplexDelete()
             sources = {tostring(2*k), tostring(2*k+1)},
             sig = tostring(k*4310573825438%124942)
         }
-        addUtxo(utxo)
+        utxoProvider.addUtxo(utxo)
         acc = updater.saveutxo(acc, utxo)
     end
-    local toDelete = getUtxos()[39]
+    local toDelete = utxoProvider.getUtxos()[39]
     acc = updater.deleteutxo(acc, toDelete)
     lu.assertNotEquals(acc, false)
 
-    toDelete = getUtxos()[16]
+    toDelete = utxoProvider.getUtxos()[16]
     acc = updater.deleteutxo(acc, toDelete)
     lu.assertNotEquals(acc, false)
 
-    toDelete = getUtxos()[12]
+    toDelete = utxoProvider.getUtxos()[12]
     acc = updater.deleteutxo(acc, toDelete)
     lu.assertNotEquals(acc, false)
 
-    toDelete = getUtxos()[43]
+    toDelete = utxoProvider.getUtxos()[43]
     acc = updater.deleteutxo(acc, toDelete)
     lu.assertNotEquals(acc, false)
 
-    toDelete = getUtxos()[1]
+    toDelete = utxoProvider.getUtxos()[1]
     acc = updater.deleteutxo(acc, toDelete)
     lu.assertNotEquals(acc, false)
 end
