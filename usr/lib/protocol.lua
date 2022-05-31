@@ -3,16 +3,6 @@ local component = {}
 
 -- loadBlock(id: string): Block
 -- saveBlock(block: Block): void
--- utxopresent(tx: Transaction): boolean
--- remutxopresent(tx: Transaction): boolean
--- tmputxopresent(tx: Transaction): boolean
--- tmpremutxopresent(tx: Transaction): boolean
--- tmpsaveutxo(txID: string, blockID: string): void
--- tmpsaveremutxo(txID: string, blockID: string): void
--- removeutxo(tx: Transaction): void
--- removeremutxo(tx: Transaction): void
--- removewalletutxto(tx: Transaction): void
--- removewalletremutxo(tx: Transaction): void
 -- consolidatetmputxo(): void
 -- setuptmpenvutxo(): void
 -- discardtmputxo(): void
@@ -21,158 +11,38 @@ local storage = {}
 -- serialize(obj: any): string
 -- unserialize(data: string): any
 local serial = {}
-local filesys = {}
 
-function protocolConstructor(componentProvider, storageProvider, serialProvider, filesysProvider)
+---@class Transaction
+---@class TransactionProof
+---@class Accumulator
+
+---@class UtxoProvider
+---@field addUtxo fun(tx: Transaction): nil
+---@field deleteUtxo fun(proof: TransactionProof): nil
+---@field getUtxos fun(): TransactionProof[]
+---@field setUtxos fun(arr: TransactionProof[]): nil
+---@field iterator fun(minH: number, maxH: number, minX: number, maxX: number): function
+local utxoProvider = {}
+
+---@class Updater
+---@field saveutxo fun(acc: Accumulator, tx: Transaction): Accumulator
+---@field deleteutxo fun(acc: Accumulator, proof: TransactionProof): Accumulator | false | nil
+local updater = {}
+
+---@param utxProv UtxoProvider
+---@param updProv Updater
+function protocolConstructor(componentProvider, storageProvider, serialProvider, updProv, utxProv)
     component = componentProvider
     storage = storageProvider
     serial = serialProvider
-    filesys = filesysProvider
+    updater = updProv
+    utxoProvider = utxProv
 end
 
 require("math.BigNum")
 
 -- Constants used in the protocol
 STARTING_DIFFICULTY = BigNum.new(2) ^ 240
-
-cache = {}
-cache.lb = "error"
-cache.nodes = {}
-cache.contacts = {}
-function cache.getlastBlock()
-    return cache.lb
-end
-function cache.loadlastBlock()
-    local file = assert(io.open("lb.txt", "r"))
-    cache.lb = file:read()
-    file:close()
-end
-function cache.savelastBlock()
-    local file = io.open("lb.txt", "w")
-    file:write(cache.lb)
-    file:close()
-end
-function cache.setlastBlock(uuid)
-    cache.lb = uuid
-    cache.savelastBlock()
-end
-function cache.loadNodes()
-    local file = assert(io.open("nodes.txt", "r"))
-    cache.nodes = serial.unserialize(file:read("*a"))
-    file:close()
-end
-function cache.saveNodes()
-    local file = assert(io.open("nodes.txt", "w"))
-    file:write(serial.serialize(cache.nodes))
-    file:close()
-end
-function cache.loadContacts()
-    local file = assert(io.open("contacts.txt", "r"))
-    cache.contacts = serial.unserialize(file:read("*a"))
-    file:close()
-end
-function cache.saveContacts()
-    local file = io.open("contacts.txt", "w")
-    file:write(serial.serialize(cache.contacts))
-    file:close()
-end
-function cache.loadBalances()
-    local file = io.open("balances.txt", "r")
-    if file == nil then
-        cache.tb = 0
-        cache.pb = 0
-    else
-        cache.tb = serial.unserialize(file:read())
-        cache.pb = serial.unserialize(file:read())
-        file:close()
-    end
-end
-function cache.saveBalances()
-    local file = io.open("balances.txt", "w")
-    file:write(serial.serialize(cache.tb) .. "\n")
-    file:write(serial.serialize(cache.pb) .. "\n")
-    file:close()
-end
-function cache.loadPendingTransactions()
-    local file = io.open("pt.txt", "r")
-    if file == nil then
-        cache.pt = {}
-    else
-        cache.pt = serial.unserialize(file:read("*a"))
-        file:close()
-    end
-end
-function cache.savePendingTransactions()
-    local file = io.open("pt.txt", "w")
-    file:write(serial.serialize(cache.pt) .. "\n")
-    file:close()
-end
-function cache.loadRecentTransactions()
-    local file = io.open("rt.txt", "r")
-    if file == nil then
-        cache.rt = {}
-    else
-        cache.rt = serial.unserialize(file:read("*a"))
-        file:close()
-    end
-end
-function cache.saveRecentTransactions()
-    local file = io.open("rt.txt", "w")
-    file:write(serial.serialize(cache.rt) .. "\n")
-    file:close()
-end
-function cache.loadTranspool()
-    local file = io.open("transpool.txt", "r")
-    if file == nil then
-        cache.transpool = {}
-    else
-        cache.transpool = serial.unserialize(file:read("*a"))
-        file:close()
-    end
-end
-function cache.saveTranspool()
-    local file = io.open("transpool.txt", "w")
-    file:write(serial.serialize(cache.transpool) .. "\n")
-    file:close()
-end
-function cache.updateTransactionCache()
-    for k, v in pairs(cache.pt) do
-        if v.confirmations >= 3 then
-            if v.to == cache.walletPK.serialize() then
-                cache.tb = cache.tb + v.qty
-            elseif v.from == cache.walletPK.serialize() then
-                cache.tb = cache.tb + v.rem
-                cache.tb = cache.tb - v.qty
-            end
-            cache.pt[k] = nil
-            if #cache.rt >= 10 then
-                table.remove(cache.rt, 1)
-            end
-            table.insert(cache.rt, v)
-        else
-            cache.pt[k].confirmations = v.confirmations + 1
-        end
-    end
-end
-function cache.updateTmpTransactionCache()
-    for k, v in pairs(cache._pt) do
-        if v.confirmations >= 3 then
-            if v.to == cache.walletPK.serialize() then
-                cache._tb = cache._tb + v.qty
-            elseif v.from == cache.walletPK.serialize() then
-                cache._tb = cache._tb + v.rem
-                cache._tb = cache._tb - v.qty
-            end
-            cache._pt[k] = nil
-            if #cache._rt >= 10 then
-                table.remove(cache._rt, 1)
-            end
-            table.insert(cache._rt, v)
-        else
-            cache._pt[k].confirmations = v.confirmations + 1
-        end
-    end
-end
 
 function getNextDifficulty(fbago, block)
     if block == nil then
@@ -625,9 +495,7 @@ function updateutxo(block)
             cache.pt[t.id] = t
         end
     end
-    cache.saveBalances()
-    cache.savePendingTransactions()
-    cache.saveRecentTransactions()
+    cache.save()
 end
 
 function updatetmputxo(block)
@@ -690,9 +558,7 @@ function consolidateBlock(block)
     if (block.height % 10 == 0) then
         storage.cacheutxo()
     end -- Every 10 blocks do an UTXO cache
-    cache.savePendingTransactions()
-    cache.saveRecentTransactions()
-    cache.saveBalances()
+    cache.save()
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
@@ -712,9 +578,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
-    cache.savePendingTransactions()
-    cache.saveRecentTransactions()
-    cache.saveBalances()
+    cache.save()
     return true
 end
 
@@ -734,8 +598,6 @@ function reconstructUTXOFromCache(newblocks, lastblock)
     end
     storage.consolidatetmputxo()
     cache.setlastBlock(lastblock.uuid)
-    cache.savePendingTransactions()
-    cache.saveRecentTransactions()
-    cache.saveBalances()
+    cache.save()
     return true
 end

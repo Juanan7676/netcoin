@@ -1,12 +1,33 @@
 local lib = {}
 
 local utxos = {}
+local utxos_backup = {}
 
 local hashService = require("math.hashService")
 
+function lib.setupTmpEnv()
+    utxos_backup = utxos
+    utxos = {}
+end
+
+function lib.discardTmpEnv()
+    utxos = utxos_backup
+end
+
+function lib.consolidateTmpEnv()
+    utxos_backup = {}
+end
+
 function lib.addUtxo(utx)
-    local proof = {index=0, hashes = {}}
-    setmetatable(proof.hashes,{__len=function() return -1 end}) -- In order for the alg to work, initial node should have h=-1.
+    local proof = {index = 0, hashes = {}}
+    setmetatable(
+        proof.hashes,
+        {
+            __len = function()
+                return -1
+            end
+        }
+    ) -- In order for the alg to work, initial node should have h=-1.
     proof.baseHash = hashService.hashTransactions({utx})
     utxos[#utxos + 1] = proof
 end
@@ -42,7 +63,11 @@ local generator = function(minH, maxH, minX, maxX)
 end
 
 function lib.iterator(minH, maxH, minX, maxX)
-    return coroutine.wrap(function() generator(minH, maxH, minX, maxX) end)
+    return coroutine.wrap(
+        function()
+            generator(minH, maxH, minX, maxX)
+        end
+    )
 end
 
 return lib

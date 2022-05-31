@@ -12,20 +12,9 @@ local term = require("term")
 require("wallet")
 require("common")
 require("minerNode")
+require("cache")
 
-cache.loadNodes()
-cache.myIP = component.modem.address
-cache.myPort = 2000
-cache.minerNode = false
-cache.minerControl=""
-cache.loadlastBlock()
-cache.rt = {}
-cache.pt = {}
-cache.loadBalances()
-cache.loadPendingTransactions()
-cache.loadRecentTransactions()
-cache.loadTranspool()
-cache.loadContacts()
+cache.load()
 print("Synchronizing with network...")
 nodenet.sync()
 print("Sync done")
@@ -49,7 +38,7 @@ function processCommand(cmd)
             if file==nil then print("Could not find file") return end
             cache.contacts[contact] = file:read("*a")
             file:close()
-            cache.saveContacts()
+            cache.save()
             print("Contact " .. contact .. " saved succesfully!")
         end
     elseif parsed[1]=="contacts" then
@@ -62,7 +51,7 @@ function processCommand(cmd)
         if #parsed ~= 2 then print("Usage: remove <contactName>")
         else
             cache.contacts[parsed[2]] = nil
-            cache.saveContacts()
+            cache.save()
             print("Operation done successfully")
         end
     elseif parsed[1]=="pay" then
