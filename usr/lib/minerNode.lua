@@ -1,11 +1,13 @@
 require("common")
-component = require("component")
-serial = require("serialization")
+local component = require("component")
+local serial = require("serialization")
 
 require("protocol")
 protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
 
 require("wallet")
+
+local updater = require("utreetxo.updater")
 
 function newTransaction(t)
     cache.transpool[t.id] = t
@@ -41,10 +43,10 @@ function newBlock(block)
 
     b.uuid = "PLACEHOLDERFOR64BYTES---0000000000000000000000000000000000000000"
     
+    updater.setupTmpEnv()
     for k,v in pairs(cache.transpool) do
-        local result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
+        local result = verifyTransaction(v)
         if (result~=false and result~="gen") then
-            local copy = b
             table.insert(b.transactions,v)
             if #serial.serialize(b) > 5000 then -- maximum block size reached
                 b.transactions[#b.transactions] = nil
@@ -53,6 +55,7 @@ function newBlock(block)
             cache.transpool[k] = nil
         end
     end
+    updater.discardTmpEnv()
 
     b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hashTransactions(b.transactions)))
 

@@ -19,6 +19,8 @@ function cache.load()
         cache.tb = 0
         cache.minerNode = true
         cache.transpool = {}
+        cache.acc = {}
+        cache.blocks = {}
         cache.save()
     else
         cache = serial.unserialize(file:read("*a"))

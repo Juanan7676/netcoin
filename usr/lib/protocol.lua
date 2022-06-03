@@ -1,3 +1,5 @@
+local hashService = require("math.hashService")
+
 -- data: DataComponent
 local component = {}
 
@@ -21,12 +23,20 @@ local serial = {}
 ---@field deleteUtxo fun(proof: TransactionProof): nil
 ---@field getUtxos fun(): TransactionProof[]
 ---@field setUtxos fun(arr: TransactionProof[]): nil
+---@field setupZeroEnv fun(): nil
+---@field setupTmpEnv fun(): nil
+---@field discardTmpEnv fun(): nil
+---@field consolidateTmpEnv fun(): nil
 ---@field iterator fun(minH: number, maxH: number, minX: number, maxX: number): function
 local utxoProvider = {}
 
 ---@class Updater
----@field saveutxo fun(acc: Accumulator, tx: Transaction): Accumulator
+---@field saveNormalUtxo fun(acc: Accumulator, tx: Transaction): Accumulator
+---@field saveRemainderUtxo fun(acc: Accumulator, tx: Transaction): Accumulator
 ---@field deleteutxo fun(acc: Accumulator, proof: TransactionProof): Accumulator | false | nil
+---@field setupTmpEnv fun(): nil
+---@field discardTmpEnv fun(): nil
+---@field consolidateTmpEnv fun(): nil
 local updater = {}
 
 ---@param utxProv UtxoProvider
@@ -84,36 +94,13 @@ function getTransactionFromBlock(block, uid)
     return nil
 end
 
-function searchBlockInList(list, uid)
+local searchBlockInList = function(list, uid)
     for _, b in pairs(list) do
         if b.uuid == uid then
             return b
         end
     end
     return nil
-end
-
-function hashTransactions(transaction_table)
-    local hash = ""
-    table.sort(
-        transaction_table,
-        function(a, b)
-            return a.id < b.id
-        end
-    )
-    for _, t in ipairs(transaction_table) do
-        hash = component.data.sha256(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
-        table.sort(
-            t.sources,
-            function(a, b)
-                return a < b
-            end
-        )
-        for _, v in ipairs(t.sources) do
-            hash = component.data.sha256(hash .. v)
-        end
-    end
-    return hash
 end
 
 function concatenateSources(sources_table)
@@ -130,7 +117,33 @@ function concatenateSources(sources_table)
     return ret
 end
 
-function verifyTransaction(t, up, rup, newBlocks)
+local loadFromHeight = function(height, id)
+    local block = storage.loadBlock(cache.blocks[height])
+    for _,v in ipairs(block.transactions) do
+        if v.id == id then return v end
+    end
+    return nil
+end
+
+local verifySource = function(source, from)
+    local transaction = loadFromHeight(source.height, source.txid)
+    if transaction == nil then return false end
+    if transaction.to == from then
+        local hash = hashService.hashData(transaction.id, transaction.to, transaction.qty)
+        if hash ~= source.proof.baseHash then return false end
+        if not updater.deleteutxo(cache.acc, source.proof) then return false end
+        return transaction.qty
+    end
+    if transaction.from == from then
+        local hash = hashService.hashData(transaction.id, transaction.from, transaction.rem)
+        if hash ~= source.proof.baseHash then return false end
+        if not updater.deleteutxo(cache.acc, source.proof) then return false end
+        return transaction.rem
+    end
+    return false
+end
+
+function verifyTransaction(t)
     if not t.id or not t.from or not t.to or not t.qty or not t.sources or not t.rem or not t.sig then
         return false
     end
@@ -159,68 +172,13 @@ function verifyTransaction(t, up, rup, newBlocks)
     if (#t.sources == 0) then
         return "gen"
     end
+
     local inputSum = 0
     for _, v in ipairs(t.sources) do
-        local trans, block
-        local rem = false
-        local normal = false
-        local utxoblock = up(v)
-        if utxoblock ~= nil and utxoblock ~= false then
-            block = storage.loadBlock(utxoblock)
-            if block == nil then
-                if newBlocks == nil then
-                    print("stored utxo block not found on chain")
-                    return false
-                end
-                block = searchBlockInList(newBlocks, utxoblock)
-                if block == nil then
-                    print("could not find utxo block on list")
-                    return false
-                end
-            end
-            normal = true
-        end
 
-        local remutxoblock = rup(v)
-        if remutxoblock ~= nil and remutxoblock ~= false then
-            block = storage.loadBlock(remutxoblock)
-            if block == nil then
-                if newBlocks == nil then
-                    print("stored utxo block not found on chain")
-                    return false
-                end
-                block = searchBlockInList(newBlocks, remutxoblock)
-                if block == nil then
-                    print("could not find utxo block on list")
-                    return false
-                end
-            end
-            rem = true
-        end
-
-        if not rem and not normal then
-            print("could not find utxo")
-            return false
-        end
-
-        trans = getTransactionFromBlock(block, v)
-        if trans == nil then
-            print("transaction not found on block")
-            return false
-        end
-
-        if trans.from == t.from and rem then --This is a remainder
-            inputSum = inputSum + trans.rem
-        elseif not rem then -- This is a normal transaction
-            if trans.to ~= t.from then
-                print("source not matches")
-                return false
-            end
-            inputSum = inputSum + trans.qty
-        else
-            print("treating a remainder as a normal trans or viceversa")
-            return false
-        end
+        local res = verifySource(v, t.from)
+        if res==false then return false end
+        inputSum = inputSum + res
     end
     if inputSum ~= t.qty + t.rem then
         print("amounts IN and OUT do not match")
@@ -229,7 +187,7 @@ function verifyTransaction(t, up, rup, newBlocks)
     return true
 end
 
-function getPrevChain(block, n)
+local getPrevChain = function(block, n)
     local fbago = block
     for k = 1, n do
         fbago = storage.loadBlock(fbago.previous)
@@ -243,7 +201,7 @@ function getPrevChain(block, n)
     return fbago
 end
 
-function getPrevList(block, blocks, n)
+local getPrevList = function(block, blocks, n)
     if (n == 0) then
         return block
     end
@@ -274,28 +232,29 @@ function getPrevList(block, blocks, n)
     return fbago
 end
 
-function verifyTransactions(block, tmp, blocks)
+local verifyTransactions = function(block)
     local genFound = false
+    updater.setupTmpEnv()
     for _, v in ipairs(block.transactions) do
-        if (tmp == nil) then
-            result = verifyTransaction(v, storage.utxopresent, storage.remutxopresent)
-        else
-            result = verifyTransaction(v, storage.tmputxopresent, storage.tmpremutxopresent, blocks)
-        end
+        local result = verifyTransaction(v)
         if result == false then
+            updater.discardTmpEnv()
             return false
         end
         if result == "gen" then
             if v.qty ~= getReward(block.height) then
+                updater.discardTmpEnv()
                 return false
             end
             if genFound == true then
+                updater.discardTmpEnv()
                 return false
             else
                 genFound = true
             end
         end
     end
+    updater.discardTmpEnv()
     return true
 end
 
@@ -375,180 +334,39 @@ function verifyBlock(block)
     return true
 end
 
-function verifyTmpBlock(block, blocks)
-    if
-        not block.uuid or not block.nonce or not block.height or not block.timestamp or not block.previous or
-            not block.transactions or
-            not block.target
-     then
-        print("malformed block")
-        return false
-    end
-    if (#block.uuid ~= 64) then
-        print("malformed uuid")
-        return false
-    end
-    local headerHash =
-        tohex(
-        component.data.sha256(block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions))
-    )
-    if (headerHash ~= block.uuid) then
-        print("invalid uuid")
-        return false
-    end
-
-    if (block.height < 0) then
-        print("invalid height")
-        return false
-    end
-    if (block.timestamp > os.time()) then
-        print("timestamp from the future")
-        return false
-    end
-
-    if block.height > 0 then --Exception: there's no previous block for genesis block!
-        local prev = getPrevList(block, blocks, 1)
-        if prev == nil then
-            print("previous block not found")
-            return false
-        end
-        if prev.height ~= block.height - 1 then
-            print(
-                "invalid height: prev is " ..
-                    prev.uuid .. " height " .. prev.height .. ", block is " .. block.uuid .. " height " .. block.height
-            )
-            return false
-        end
-        if prev.timestamp >= block.timestamp then
-            print("invalid timestamp")
-            return false
-        end
-    end
-
-    local fbago = getPrevList(block, blocks, 50)
-    if BigNum.new(block.target) ~= BigNum.new(getNextDifficulty(fbago, getPrevList(block, blocks, 1))) then
-        print("invalid difficulty")
-        return false
-    end
-
-    if BigNum.fromHex(tohex(component.data.sha256(headerHash .. block.nonce))) > BigNum.new(block.target) then
-        print("invalid pow " .. block.uuid)
-        return false
-    end
-
-    if not verifyTransactions(block, true, blocks) then
-        print("invalid transactions")
-        return false
-    end
-    return true
-end
-
-function updateutxo(block)
+local updateutxo = function(block)
     cache.updateTransactionCache()
     for _, t in ipairs(block.transactions) do -- update UTXO list
+        if (t.from == cache.walletPK.serialize()) then
+            cache.pb = cache.pb - t.qty + t.rem
+        end
         if t.sources ~= nil then
             for _, s in ipairs(t.sources) do
-                local trans
-                local sourceblock = storage.utxopresent(s)
-                if sourceblock ~= false then
-                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock), s)
-                else
-                    sourceblock = storage.remutxopresent(s)
-                    if sourceblock == false then
-                        print("source is neither an UTXO nor a REMUTXO!")
-                        return nil
-                    end
-                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock), s)
-                end
+                local result = updater.deleteutxo(cache.acc, s.proof)
+                if result==false then return nil end
 
-                if trans.from == t.from then
-                    storage.removeremutxo(s)
-                    if (t.from == cache.walletPK.serialize()) then
-                        storage.removewalletremutxo(s)
-                        cache.pb = cache.pb - trans.rem
-                    end
-                end
-                if trans.to == t.from then
-                    storage.removeutxo(s)
-                    if (t.from == cache.walletPK.serialize()) then
-                        storage.removewalletutxo(s)
-                        cache.pb = cache.pb - trans.qty
-                    end
+                if (t.from == cache.walletPK.serialize()) then
+                    utxoProvider.deleteUtxo(s.proof)
                 end
             end
         end
-        storage.saveutxo(t.id, block.uuid)
-        if (t.rem > 0) then
-            storage.saveremutxo(t.id, block.uuid)
-        end
+        if (t.qty > 0) then updater.saveNormalUtxo(cache.acc, t) end
+        if (t.rem > 0) then updater.saveRemainderUtxo(cache.acc, t) end
 
         if (t.to == cache.walletPK.serialize() and t.qty > 0) then
-            storage.savewalletutxo(t.id, block.uuid)
+            utxoProvider.addUtxo(t)
             cache.pb = cache.pb + t.qty
             t.confirmations = 0
             cache.pt[t.id] = t
         end
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
-            storage.savewalletremutxo(t.id, block.uuid)
+            utxoProvider.addUtxo(t)
             cache.pb = cache.pb + t.rem
             t.confirmations = 0
             cache.pt[t.id] = t
         end
     end
     cache.save()
-end
-
-function updatetmputxo(block)
-    cache.updateTmpTransactionCache()
-    for _, t in ipairs(block.transactions) do -- update UTXO list
-        if t.sources ~= nil then
-            for _, s in ipairs(t.sources) do
-                local trans
-                local sourceblock = storage.tmputxopresent(s)
-                if sourceblock ~= false then
-                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock), s)
-                else
-                    sourceblock = storage.tmpremutxopresent(s)
-                    if sourceblock == false then
-                        print("source is neither an UTXO nor a REMUTXO!")
-                        return nil
-                    end
-                    trans = getTransactionFromBlock(storage.loadBlock(sourceblock), s)
-                end
-
-                if trans.from == t.from then
-                    storage.tmpremoveremutxo(s)
-                    if (t.from == cache.walletPK.serialize()) then
-                        storage.tmpremovewalletremutxo(s)
-                        cache._pb = cache._pb - trans.rem
-                    end
-                else
-                    if (t.from == cache.walletPK.serialize()) then
-                        storage.tmpremovewalletutxo(s)
-                        cache._pb = cache._pb - trans.qty
-                    end
-                    storage.tmpremoveutxo(s)
-                end
-            end
-        end
-        storage.tmpsaveutxo(t.id, block.uuid)
-        if (t.rem > 0) then
-            storage.tmpsaveremutxo(t.id, block.uuid)
-        end
-
-        if (t.to == cache.walletPK.serialize() and t.qty > 0) then
-            storage.tmpsavewalletutxo(t.id, block.uuid)
-            cache._pb = cache._pb + t.qty
-            t.confirmations = 0
-            cache._pt[t.id] = t
-        end
-        if (t.from == cache.walletPK.serialize() and t.rem > 0) then
-            storage.tmpsavewalletremutxo(t.id, block.uuid)
-            cache._pb = cache._pb + t.rem
-            t.confirmations = 0
-            cache._pt[t.id] = t
-        end
-    end
 end
 
 function consolidateBlock(block)
@@ -562,31 +380,35 @@ function consolidateBlock(block)
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
-    storage.setuptmpenvutxo()
+    updater.setupTmpEnv()
+    utxoProvider.setupZeroEnv()
     for k = 0, lastblock.height do
         local block = getPrevList(lastblock, newblocks, lastblock.height - k)
-        if not verifyTmpBlock(block, newblocks) then
+        if not verifyBlock(block) then
             print("invalid block")
-            storage.discardtmputxo()
-            for _, b in pairs(newblocks) do
+            updater.discardTmpEnv()
+            utxoProvider.discardTmpEnv()
+            for _, b in ipairs(newblocks) do
                 storage.deleteBlock(b.uuid)
             end
             return false
         end
         storage.saveBlock(block)
-        updatetmputxo(block)
+        updateutxo(block)
     end
-    storage.consolidatetmputxo()
+    updater.consolidateTmpEnv()
+    utxoProvider.consolidateTmpEnv()
     cache.setlastBlock(lastblock.uuid)
     cache.save()
     return true
 end
 
 function reconstructUTXOFromCache(newblocks, lastblock)
+    updater.setupTmpEnv()
     storage.setuptmpenvutxo_cache()
     for k = lastblock.height - lastblock.height % 10, lastblock.height do
         local block = getPrevList(lastblock, newblocks, lastblock.height - k)
-        if not verifyTmpBlock(block, newblocks) then
+        if not verifyBlock(block) then
             storage.discardtmputxo()
             for _, b in pairs(newblocks) do
                 storage.deleteBlock(b.uuid)

@@ -81,12 +81,21 @@ local cbHandler = function(opName, ...)
     end
 end
 
---- Updates and saves the given utxo into the accumulator.
-function updater.saveutxo(acc, utx)
+local saveHash = function(acc, hash)
     if utxoProvider == nil then
         return nil
     end
-    return accumulator.add(acc, hashService.hashTransactions({utx}), cbHandler)
+    return accumulator.add(acc, hash, cbHandler)
+end
+
+--- Updates and saves the given normal utxo in the accumulator
+function updater.saveNormalUtxo(acc, tx)
+    return saveHash(acc, hashService.hashData( tx.id, tx.to, tx.qty ) )
+end
+
+--- Updates and saves the given remainder utxo in the accumulator
+function updater.saveRemainderUtxo(acc, tx)
+    return saveHash(acc, hashService.hashData( tx.id, tx.from, tx.rem ) )
 end
 
 --- Updates and deletes the given utxo into the accumulator.
@@ -96,6 +105,19 @@ function updater.deleteutxo(acc, proof)
         return nil
     end
     return accumulator.delete(acc, proof, cbHandler)
+end
+
+function updater.setupTmpEnv()
+    cache._acc[#cache._acc + 1] = cache.acc
+end
+
+function updater.discardTmpEnv()
+    cache.acc = cache._acc[#cache._acc]
+    cache._acc[#cache._acc] = nil
+end
+
+function updater.consolidateTmpEnv()
+    cache._acc[#cache.acc] = nil
 end
 
 return updater

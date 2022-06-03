@@ -6,16 +6,21 @@ local utxos_backup = {}
 local hashService = require("math.hashService")
 
 function lib.setupTmpEnv()
-    utxos_backup = utxos
+    utxos_backup[#utxos_backup + 1] = utxos
+end
+
+function lib.setupZeroEnv()
+    lib.setupTmpEnv()
     utxos = {}
 end
 
 function lib.discardTmpEnv()
-    utxos = utxos_backup
+    utxos = utxos_backup[#utxos_backup]
+    utxos_backup[#utxos_backup] = nil
 end
 
 function lib.consolidateTmpEnv()
-    utxos_backup = {}
+    utxos_backup[#utxos_backup] = nil
 end
 
 function lib.addUtxo(utx)

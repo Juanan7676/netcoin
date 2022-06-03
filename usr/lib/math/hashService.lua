@@ -31,4 +31,13 @@ service.hashTransactions = function(transaction_table)
     return hash
 end
 
+service.hashData = function(...)
+    local args = table.pack(...)
+    local hash = ""
+    for _, v in ipairs(args) do
+        hash = service.hash(hash .. v)
+    end
+    return hash
+end
+
 return service
