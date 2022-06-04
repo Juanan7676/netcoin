@@ -10,6 +10,10 @@ os.execute('wget -f '..baseDir.."usr/bin/minerCentral.lua usr/bin/minerCentral.l
 os.execute('wget -f '..baseDir.."usr/bin/node.lua usr/bin/node.lua")
 
 os.execute('wget -f '..baseDir.."usr/lib/math/BigNum.lua usr/lib/math/BigNum.lua")
+os.execute('wget -f '..baseDir.."usr/lib/math/hashService.lua usr/lib/math/hashService.lua")
+os.execute('wget -f '..baseDir.."usr/lib/utreetxo/accumulator.lua usr/lib/utreetxo/accumulator.lua")
+os.execute('wget -f '..baseDir.."usr/lib/utreetxo/updater.lua usr/lib/utreetxo/updater.lua")
+os.execute('wget -f '..baseDir.."usr/lib/utreetxo/utxoProviderInMemory.lua usr/lib/utreetxo/utxoProviderInMemory.lua")
 os.execute('wget -f '..baseDir.."usr/lib/common.lua usr/lib/common.lua")
 os.execute('wget -f '..baseDir.."usr/lib/minerNode.lua usr/lib/minerNode.lua")
 os.execute('wget -f '..baseDir.."usr/lib/netcraftAPI.lua usr/lib/netcraftAPI.lua")
