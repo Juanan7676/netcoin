@@ -5,10 +5,15 @@ package.loaded.filesystem = require("mocks.filesystem")
 package.loaded.shell = require("mocks.shell")
 package.loaded.term = require("mocks.term")
 
+local hashService = require("math.hashService")
+hashService.constructor(package.loaded.component.data.sha256)
 local storage = require("mocks.storage")
+local updater = require("utreetxo.updater")
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
+updater.constructor(utxoProvider)
 
 require("protocol")
-protocolConstructor(require("mocks.component"), storage, require("mocks.serialization"), require("mocks.filesystem"))
+protocolConstructor(require("mocks.component"), storage, require("mocks.serialization"), updater, utxoProvider)
 
 require("objectFactories.blockFactory")
 
