@@ -18,7 +18,7 @@ lu = require('luaunit')
 
 function test_miner_1()
     math.randomseed(0)
-    res, nonce = minar('test', BigNum.new(2)^240, package.loaded.component.data.sha256, 100000)
+    res, nonce = minar('test', BigNum.toHex(BigNum.new(2)^240), package.loaded.component.data.sha256, 100000)
     print(nonce)
     lu.assertEquals(res, true)
 end
