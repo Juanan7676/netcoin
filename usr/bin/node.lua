@@ -5,7 +5,7 @@ local term = require("term")
 
 local hashService = require("math.hashService")
 hashService.constructor(component.data.sha256)
-local storage = require("mocks.storage")
+local storage = require("storage")
 local updater = require("utreetxo.updater")
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
 updater.constructor(utxoProvider)

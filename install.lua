@@ -4,6 +4,7 @@ os.execute('mkdir usr')
 os.execute('mkdir usr/bin')
 os.execute('mkdir usr/lib')
 os.execute('mkdir usr/lib/math')
+os.execute('mkdir usr/lib/utreetxo')
 
 os.execute('wget -f '..baseDir.."usr/bin/miner.lua usr/bin/miner.lua")
 os.execute('wget -f '..baseDir.."usr/bin/minerCentral.lua usr/bin/minerCentral.lua")
