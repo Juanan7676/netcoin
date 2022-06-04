@@ -12,6 +12,9 @@ local updater = require("utreetxo.updater")
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
 updater.constructor(utxoProvider)
 
+require("cache")
+cache.load()
+
 require("protocol")
 protocolConstructor(require("mocks.component"), storage, require("mocks.serialization"), updater, utxoProvider)
 
