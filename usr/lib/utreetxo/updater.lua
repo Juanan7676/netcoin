@@ -105,6 +105,7 @@ function updater.deleteutxo(acc, proof)
 end
 
 function updater.setupTmpEnv()
+    if cache._acc == nil then cache._acc = {} end
     cache._acc[#cache._acc + 1] = cache.acc
 end
 
