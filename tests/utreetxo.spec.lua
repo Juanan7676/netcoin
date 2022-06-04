@@ -41,7 +41,7 @@ function Test01_simpleadd()
         sources = {"utxo1", "utxo2"},
         sig = "blablabla"
     }
-    utxoProvider.addUtxo(myutxo)
+    utxoProvider.addNormalUtxo(myutxo, 0)
     acc = updater.saveutxo(acc, myutxo)
     lu.assertEquals(acc[0], "335d712f953d70aed03692a14eb4fcf6945be69e208a2a96b983f3ff14d5163f")
     lu.assertEquals(acc[1], nil)
@@ -72,7 +72,7 @@ function Test03_ComplexDelete()
             sources = {tostring(2 * k), tostring(2 * k + 1)},
             sig = tostring(k * 4310573825438 % 124942)
         }
-        utxoProvider.addUtxo(utxo)
+        utxoProvider.addNormalUtxo(utxo, 0)
         acc = updater.saveutxo(acc, utxo)
     end
 
@@ -98,7 +98,7 @@ function Test04_deletetwice()
     }
 
     -- act
-    utxoProvider.addUtxo(myutxo)
+    utxoProvider.addNormalUtxo(myutxo, 0)
     acc = updater.saveutxo(acc, myutxo)
     local proof = utxoProvider.getUtxos()[1]
     acc = updater.deleteutxo(acc, proof)

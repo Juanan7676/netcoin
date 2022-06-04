@@ -23,7 +23,7 @@ function lib.consolidateTmpEnv()
     utxos_backup[#utxos_backup] = nil
 end
 
-function lib.addUtxo(utx)
+function lib.addNormalUtxo(tx, blockHeight)
     local proof = {index = 0, hashes = {}}
     setmetatable(
         proof.hashes,
@@ -33,13 +33,35 @@ function lib.addUtxo(utx)
             end
         }
     ) -- In order for the alg to work, initial node should have h=-1.
-    proof.baseHash = hashService.hashTransactions({utx})
-    utxos[#utxos + 1] = proof
+    proof.baseHash = hashService.hashData( tx.id, tx.to, tx.qty )
+    utxos[#utxos + 1] = {
+        proof=proof,
+        txid=tx.id,
+        bH=blockHeight
+    }
+end
+
+function lib.addRemainderUtxo(tx, blockHeight)
+    local proof = {index = 0, hashes = {}}
+    setmetatable(
+        proof.hashes,
+        {
+            __len = function()
+                return -1
+            end
+        }
+    ) -- In order for the alg to work, initial node should have h=-1.
+    proof.baseHash = hashService.hashData( tx.id, tx.from, tx.rem )
+    utxos[#utxos + 1] = {
+        proof=proof,
+        txid=tx.id,
+        bH=blockHeight
+    }
 end
 
 function lib.deleteUtxo(proof)
     for i, v in ipairs(utxos) do
-        if v.baseHash == proof.baseHash then
+        if v.proof.baseHash == proof.baseHash then
             table.remove(utxos, i)
             return
         end
@@ -58,11 +80,11 @@ local generator = function(minH, maxH, minX, maxX)
     local utxosCopy = copy(utxos)
     for i, v in ipairs(utxosCopy) do
         if
-            not (minH ~= nil and #v.hashes < minH) and not (maxH ~= nil and #v.hashes > maxH) and
-                not (minX ~= nil and v.index < minX) and
-                not (maxX ~= nil and v.index > maxX)
+            not (minH ~= nil and #v.proof.hashes < minH) and not (maxH ~= nil and #v.proof.hashes > maxH) and
+                not (minX ~= nil and v.proof.index < minX) and
+                not (maxX ~= nil and v.proof.index > maxX)
          then
-            coroutine.yield(utxos[i])
+            coroutine.yield(utxos[i].proof)
         end
     end
 end

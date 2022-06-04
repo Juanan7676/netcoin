@@ -575,23 +575,6 @@ local loadUTXFromCache = function()
 	file:close()
 end
 
-function storage.saveutxo(tx, isWallet)
-	if isWallet then utxoProvider.addUtxo(tx) end
-	cache.acc = updater.saveutxo(cache.acc, tx)
-	saveUTX(utxoProvider.getUtxos())
-end
-
-function storage.deleteutxo(proof, isWallet)
-	local res = updater.deleteutxo(cache.acc, proof)
-	if res == false then return false end
-	cache.acc = res
-	if isWallet then 
-		utxoProvider.deleteUtxo(proof)
-		saveUTX(utxoProvider.getUtxos())
-	end
-	return true
-end
-
 function storage.discardtmputxo()
 	utxoProvider.discardTmpEnv()
 	cache._tb = nil

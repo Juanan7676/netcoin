@@ -82,9 +82,6 @@ local cbHandler = function(opName, ...)
 end
 
 local saveHash = function(acc, hash)
-    if utxoProvider == nil then
-        return nil
-    end
     return accumulator.add(acc, hash, cbHandler)
 end
 

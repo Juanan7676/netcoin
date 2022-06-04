@@ -7,6 +7,7 @@ local component = require("component")
 local serial = require("serialization")
 local os = require("os")
 local modem = component.modem
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
 require("common")
 require("minerNode")
 
@@ -108,54 +109,28 @@ function nodenet.confectionateTransaction(to, qty)
     t.sources = {}
     local totalIN = 0
 
-    local file = io.open(getMount(storage.utxoDisk) .. "/walletremutxo.txt", "r")
-    local line = file:read()
-    while line ~= nil do
-        local parsed = explode(",", line)
-        local source = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
-        if (source ~= nil) then
-            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
-            if (diff >= 3) then
-                totalIN = totalIN + source.rem
-                table.insert(t.sources, source.id)
-                if (totalIN >= qty) then
-                    break
-                end
-            end
+    for tx in utxoProvider.getUtxos() do
+        local source = {
+            height = tx.bH,
+            proof = tx.proof,
+            txid = tx.txid
+        }
+        local transaction = loadFromHeight(source.height, source.txid)
+        if transaction==nil then print("ERROR: Stored utxo not found on chain") return nil end
+        if transaction.to == t.from then
+            totalIN = totalIN + transaction.qty
+            t.sources[#t.sources+1] = source
+        elseif transaction.from == t.from then
+            totalIN = totalIN + transaction.rem
+            t.sources[#t.sources+1] = source
+        else
+            print("ERROR: Stored utxo is incorrect, contact a developer!!!")
         end
-        line = file:read()
-    end
-    file:close()
-
-    if totalIN >= qty then
-        t.rem = totalIN - qty
-        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem, cache.walletSK)
-        return t
-    end
-
-    file = io.open(getMount(storage.utxoDisk) .. "/walletutxo.txt", "r")
-    line = file:read()
-    while line ~= nil do
-        local parsed = explode(",", line)
-        local source = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
-        if (source ~= nil) then
-            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
-            if (diff >= 3) then
-                totalIN = totalIN + source.qty
-                table.insert(t.sources, source.id)
-                if (totalIN >= qty) then
-                    break
-                end
-            end
+        if totalIN >= qty then
+            t.rem = totalIN - qty
+            t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. hashSources(t.sources) .. t.rem, cache.walletSK)
+            return t
         end
-        line = file:read()
-    end
-    file:close()
-
-    if totalIN >= qty then
-        t.rem = totalIN - qty
-        t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem, cache.walletSK)
-        return t
     end
 
     return nil
@@ -313,7 +288,6 @@ function nodenet.newBlock(clientIP, clientPort, block)
         consolidateBlock(block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP, clientPort, "BLOCK_ACCEPTED")
-        os.sleep(1.05)
         if (cache.minerNode) then
             newBlock(storage.loadBlock(cache.getlastBlock()))
         end
@@ -322,48 +296,46 @@ function nodenet.newBlock(clientIP, clientPort, block)
     return false
 end
 
+local requestBlock = function(client, port, blockUUID)
+    nodenet.sendClient(client, port, "GETBLOCK###"..blockUUID)
+    for k = 1,5 do
+        local _,_,res = napi.listentoclient(modem, cache.myPort, client, 2)
+        res = explode("####",res)
+        if res[1] == "OK" then
+            return serial.unserialize(res[2])
+        end
+    end
+    return nil
+end
+
+local cleanBlocks = function(blockIds)
+    for _,v in pairs(blockIds) do
+        storage.deleteBlock(v)
+    end
+end
+
 function nodenet.newUnknownBlock(clientIP, clientPort, block)
-    if block.previous == block.uuid then
+    if block.height == 0 then
         print("Genesis block received!")
-        reconstructUTXOFromZero({}, block)
+        local result = reconstructUTXOFromZero(blockIds, block)
     end
-    local lb = storage.loadBlock(cache.getlastBlock())
-    local chain = lb
-    if (chain == nil) then
-        chain = {uuid = "", height = -1}
-    end
-    local recv = {block}
-    while (chain.uuid ~= "" and chain.uuid ~= recv[#recv].uuid and recv[#recv].height ~= 0) or
-        (chain.uuid == "" and recv[#recv].height ~= 0) do
-        local msg
-        local tries = 0
-        repeat
-            nodenet.sendClient(clientIP, clientPort, "GETBLOCK####" .. (recv[#recv].previous))
-            _, _, msg = napi.listentoclient(modem, cache.myPort, clientIP, 2)
-            if msg ~= nil then
-                msg = explode("####", msg)
-            else
-                msg = {}
-            end
-            tries = tries + 1
-        until msg[1] == "OK" or tries >= 5
-        if tries >= 5 then
+
+    local blockIds = {}
+    local b = block
+    blockIds[b.height] = b
+    storage.saveBlock(b)
+    while cache.blocks[block.height] ~= block.uuid and b.height > 0 do
+        b = requestBlock(clientIP, clientPort, block.previous)
+        if b==nil then
+            cleanBlocks(blockIds)
             return false
         end
-        local recvb = serial.unserialize(msg[2])
-        if recvb.uuid ~= recv[#recv].previous then
-            return false
-        end
-        recv[#recv + 1] = recvb
-        if (chain.uuid ~= "" and chain.height == recv[#recv - 1].height) then
-            chain = storage.loadBlock(chain.previous)
-        end
+        blockIds[b.height] = b
+        storage.saveBlock(b)
     end
-    if
-        chain.uuid == "" or
-            (((lb.height - lb.height % 10) ~= (block.height - block.height % 10)) or recv[#recv].height == 0)
-     then
-        local result = reconstructUTXOFromZero(recv, block)
+    local lastblock = storage.loadBlock(cache.lb) or {height=1}
+    if b.height==0 or b.height < (lastblock.height - lastblock.height%10) then
+        local result = reconstructUTXOFromZero(blockIds, b)
         if (not result) then
             nodenet.sendClient(clientIP, clientPort, "INVALID_BLOCKS")
         else
@@ -371,7 +343,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
             return true
         end
     else
-        local result = reconstructUTXOFromCache(recv, block)
+        local result = reconstructUTXOFromCache(blockIds, b, lastblock.height - lastblock.height%10)
         if (not result) then
             nodenet.sendClient(clientIP, clientPort, "INVALID_CHAIN")
         else
@@ -379,6 +351,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
             return true
         end
     end
+    cleanBlocks(blockIds)
     return false
 end
 

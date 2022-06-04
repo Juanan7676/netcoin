@@ -19,7 +19,8 @@ local serial = {}
 ---@class Accumulator
 
 ---@class UtxoProvider
----@field addUtxo fun(tx: Transaction): nil
+---@field addNormalUtxo fun(tx: Transaction, bH: number): nil
+---@field addRemainderUtxo fun(tx: Transaction, bH: number): nil
 ---@field deleteUtxo fun(proof: TransactionProof): nil
 ---@field getUtxos fun(): TransactionProof[]
 ---@field setUtxos fun(arr: TransactionProof[]): nil
@@ -73,7 +74,7 @@ function getNextDifficulty(fbago, block)
     if correctionFactor < 0.25 then
         correctionFactor = 0.25
     end
-    local quotient, _ = (fbago.target * BigNum.new(correctionFactor * 100)) // BigNum.new(100)
+    local quotient = (fbago.target * BigNum.new(correctionFactor * 100)) // BigNum.new(100)
     return quotient
 end
 
@@ -94,30 +95,24 @@ function getTransactionFromBlock(block, uid)
     return nil
 end
 
-local searchBlockInList = function(list, uid)
-    for _, b in pairs(list) do
-        if b.uuid == uid then
-            return b
-        end
-    end
-    return nil
-end
-
-function concatenateSources(sources_table)
-    local ret = ""
+function hashSources(sources_table)
+    local hash = ""
     table.sort(
         sources_table,
         function(a, b)
-            return a < b
+            return a.txid < b.txid
         end
     )
     for _, t in ipairs(sources_table) do
-        ret = ret .. t
+        hash = hashService.hash(hash .. t.height .. t.txid .. t.proof.baseHash .. t.proof.index)
+        for _,v in ipairs(t.proof.hashes) do
+            hash = hashService.hash(hash .. v)
+        end
     end
-    return ret
+    return hash
 end
 
-local loadFromHeight = function(height, id)
+function loadFromHeight(height, id)
     local block = storage.loadBlock(cache.blocks[height])
     for _,v in ipairs(block.transactions) do
         if v.id == id then return v end
@@ -126,6 +121,8 @@ local loadFromHeight = function(height, id)
 end
 
 local verifySource = function(source, from)
+    if (source.height == nil or source.proof == nil or source.txid == nil) then return false end
+    
     local transaction = loadFromHeight(source.height, source.txid)
     if transaction == nil then return false end
     if transaction.to == from then
@@ -159,7 +156,7 @@ function verifyTransaction(t)
         end
         if
             not component.data.ecdsa(
-                t.id .. t.from .. t.to .. t.qty .. concatenateSources(t.sources) .. t.rem,
+                t.id .. t.from .. t.to .. t.qty .. hashSources(t.sources) .. t.rem,
                 pk,
                 t.sig
             )
@@ -196,37 +193,6 @@ local getPrevChain = function(block, n)
         end
         if fbago.height == 0 then
             return fbago
-        end
-    end
-    return fbago
-end
-
-local getPrevList = function(block, blocks, n)
-    if (n == 0) then
-        return block
-    end
-    local fbago = block
-    local start = 0
-    for i = 1, #blocks do
-        if blocks[i].uuid == block.uuid then
-            start = i - 1
-            break
-        end
-    end
-    --assert(start ~= 0)
-
-    for k = 1, n do
-        local tmp = blocks[#blocks - start - k]
-        if tmp == nil then
-            fbago = storage.loadBlock(fbago.previous)
-            if fbago == nil then
-                return nil
-            end
-            if fbago.height == 0 and k < n then
-                return nil
-            end
-        else
-            fbago = tmp
         end
     end
     return fbago
@@ -354,13 +320,13 @@ local updateutxo = function(block)
         if (t.rem > 0) then updater.saveRemainderUtxo(cache.acc, t) end
 
         if (t.to == cache.walletPK.serialize() and t.qty > 0) then
-            utxoProvider.addUtxo(t)
+            utxoProvider.addNormalUtxo(t, block.height)
             cache.pb = cache.pb + t.qty
             t.confirmations = 0
             cache.pt[t.id] = t
         end
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
-            utxoProvider.addUtxo(t)
+            utxoProvider.addRemainderUtxo(t, block.height)
             cache.pb = cache.pb + t.rem
             t.confirmations = 0
             cache.pt[t.id] = t
@@ -376,6 +342,7 @@ function consolidateBlock(block)
     if (block.height % 10 == 0) then
         storage.cacheutxo()
     end -- Every 10 blocks do an UTXO cache
+    cache.blocks[block.height] = block.uuid
     cache.save()
 end
 
@@ -383,7 +350,9 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     updater.setupTmpEnv()
     utxoProvider.setupZeroEnv()
     for k = 0, lastblock.height do
-        local block = getPrevList(lastblock, newblocks, lastblock.height - k)
+        local block
+        if newblocks[k] ~= nil then block = storage.loadBlock(newblocks[k])
+        else block = storage.loadBlock(cache.blocks[k]) end
         if not verifyBlock(block) then
             print("invalid block")
             updater.discardTmpEnv()
@@ -393,7 +362,6 @@ function reconstructUTXOFromZero(newblocks, lastblock)
             end
             return false
         end
-        storage.saveBlock(block)
         updateutxo(block)
     end
     updater.consolidateTmpEnv()
@@ -403,11 +371,13 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     return true
 end
 
-function reconstructUTXOFromCache(newblocks, lastblock)
+function reconstructUTXOFromCache(newblocks, lastblock, cacheHeight)
     updater.setupTmpEnv()
     storage.setuptmpenvutxo_cache()
-    for k = lastblock.height - lastblock.height % 10, lastblock.height do
-        local block = getPrevList(lastblock, newblocks, lastblock.height - k)
+    for k = cacheHeight, lastblock.height do
+        local block
+        if newblocks[k] ~= nil then block = storage.loadBlock(newblocks[k])
+        else block = storage.loadBlock(cache.blocks[k]) end
         if not verifyBlock(block) then
             storage.discardtmputxo()
             for _, b in pairs(newblocks) do
@@ -415,10 +385,10 @@ function reconstructUTXOFromCache(newblocks, lastblock)
             end
             return false
         end
-        storage.saveBlock(block)
-        updatetmputxo(block)
+        updateutxo(block)
     end
-    storage.consolidatetmputxo()
+    updater.consolidateTmpEnv()
+    utxoProvider.consolidateTmpEnv()
     cache.setlastBlock(lastblock.uuid)
     cache.save()
     return true

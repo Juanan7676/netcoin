@@ -38,7 +38,7 @@ function newBlock(block)
     rt.qty = getReward(b.height)
     rt.sources = {}
     rt.rem = 0
-    rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. concatenateSources(rt.sources).. rt.rem,cache.walletSK)
+    rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. hashSources(rt.sources).. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
 
     b.uuid = "PLACEHOLDERFOR64BYTES---0000000000000000000000000000000000000000"
@@ -79,7 +79,7 @@ function genesisBlock()
     rt.qty = getReward(b.height)
     rt.sources = {}
     rt.rem = 0
-    rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. concatenateSources(rt.sources) .. rt.rem,cache.walletSK)
+    rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. hashSources(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
     b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hashTransactions(b.transactions)))
     component.modem.send(minercentralIP,7000,"NJ####" .. serial.serialize(b))
