@@ -1,19 +1,25 @@
+local thread = require("thread")
+local component = require("component")
+local serial = require("serialization")
+local term = require("term")
+
+local hashService = require("math.hashService")
+hashService.constructor(component.data.sha256)
+local storage = require("mocks.storage")
+local updater = require("utreetxo.updater")
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
+updater.constructor(utxoProvider)
+
 local nodenet = require("nodenet")
 require("storage")
 
 require("protocol")
-protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
+protocolConstructor(component, storage,serial, updater, utxoProvider)
 
-local thread = require("thread")
-local napi = require("netcraftAPI")
-local component = require("component")
-local serial = require("serialization")
-local term = require("term")
 require("wallet")
 require("common")
 require("minerNode")
 require("cache")
-
 cache.load()
 print("Synchronizing with network...")
 nodenet.sync()

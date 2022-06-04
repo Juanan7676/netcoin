@@ -1,5 +1,4 @@
 require("protocol")
-protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
 
 local storage = require("storage")
 local napi = require("netcraftAPI")

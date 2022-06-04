@@ -1,10 +1,7 @@
 require("common")
 local component = require("component")
 local serial = require("serialization")
-
 require("protocol")
-protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
-
 require("wallet")
 
 local updater = require("utreetxo.updater")
