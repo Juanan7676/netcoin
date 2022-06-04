@@ -59,9 +59,9 @@ function lib.addRemainderUtxo(tx, blockHeight)
     }
 end
 
-function lib.deleteUtxo(proof)
+function lib.deleteUtxo(tx)
     for i, v in ipairs(utxos) do
-        if v.proof.baseHash == proof.baseHash then
+        if v.proof.baseHash == tx.proof.baseHash then
             table.remove(utxos, i)
             return
         end

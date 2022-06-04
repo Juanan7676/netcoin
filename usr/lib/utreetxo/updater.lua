@@ -97,11 +97,11 @@ end
 
 --- Updates and deletes the given utxo into the accumulator.
 --- Returns nil if the updater is not constructed, false if the utxo was not present, the updated accumulator otherwise.
-function updater.deleteutxo(acc, proof)
+function updater.deleteutxo(acc, tx)
     if utxoProvider == nil then
         return nil
     end
-    return accumulator.delete(acc, proof, cbHandler)
+    return accumulator.delete(acc, tx.proof, cbHandler)
 end
 
 function updater.setupTmpEnv()

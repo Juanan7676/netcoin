@@ -42,21 +42,21 @@ function Test01_simpleadd()
         sig = "blablabla"
     }
     utxoProvider.addNormalUtxo(myutxo, 0)
-    acc = updater.saveutxo(acc, myutxo)
-    lu.assertEquals(acc[0], "335d712f953d70aed03692a14eb4fcf6945be69e208a2a96b983f3ff14d5163f")
+    acc = updater.saveNormalUtxo(acc, myutxo)
+    lu.assertEquals(acc[0], "69a0df622d29d8d763d619d4f68ad13b5974e2e35da33edcb5ffdef98f5ee789")
     lu.assertEquals(acc[1], nil)
 
-    local proof = utxoProvider.getUtxos()[1]
-    lu.assertNotEquals(proof, nil)
-    lu.assertEquals(#proof.hashes, 0)
+    local tx = utxoProvider.getUtxos()[1]
+    lu.assertNotEquals(tx, nil)
+    lu.assertEquals(#tx.proof.hashes, 0)
 end
 
 function Test02_Delete()
-    local proof = utxoProvider.getUtxos()[1]
-    local res = updater.deleteutxo(acc, proof)
+    local tx = utxoProvider.getUtxos()[1]
+    local res = updater.deleteutxo(acc, tx)
     lu.assertNotEquals(res, nil)
     lu.assertNotEquals(res, false)
-    utxoProvider.deleteUtxo(proof)
+    utxoProvider.deleteUtxo(tx)
     lu.assertEquals(utxoProvider.getUtxos()[1], nil)
 end
 
@@ -73,7 +73,7 @@ function Test03_ComplexDelete()
             sig = tostring(k * 4310573825438 % 124942)
         }
         utxoProvider.addNormalUtxo(utxo, 0)
-        acc = updater.saveutxo(acc, utxo)
+        acc = updater.saveNormalUtxo(acc, utxo)
     end
 
     for k = 1, 50 do
@@ -99,7 +99,7 @@ function Test04_deletetwice()
 
     -- act
     utxoProvider.addNormalUtxo(myutxo, 0)
-    acc = updater.saveutxo(acc, myutxo)
+    acc = updater.saveNormalUtxo(acc, myutxo)
     local proof = utxoProvider.getUtxos()[1]
     acc = updater.deleteutxo(acc, proof)
     lu.assertNotEquals(acc, false)

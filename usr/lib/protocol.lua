@@ -128,13 +128,13 @@ local verifySource = function(source, from)
     if transaction.to == from then
         local hash = hashService.hashData(transaction.id, transaction.to, transaction.qty)
         if hash ~= source.proof.baseHash then return false end
-        if not updater.deleteutxo(cache.acc, source.proof) then return false end
+        if not updater.deleteutxo(cache.acc, source) then return false end
         return transaction.qty
     end
     if transaction.from == from then
         local hash = hashService.hashData(transaction.id, transaction.from, transaction.rem)
         if hash ~= source.proof.baseHash then return false end
-        if not updater.deleteutxo(cache.acc, source.proof) then return false end
+        if not updater.deleteutxo(cache.acc, source) then return false end
         return transaction.rem
     end
     return false
@@ -308,11 +308,11 @@ local updateutxo = function(block)
         end
         if t.sources ~= nil then
             for _, s in ipairs(t.sources) do
-                local result = updater.deleteutxo(cache.acc, s.proof)
+                local result = updater.deleteutxo(cache.acc, s)
                 if result==false then return nil end
 
                 if (t.from == cache.walletPK.serialize()) then
-                    utxoProvider.deleteUtxo(s.proof)
+                    utxoProvider.deleteUtxo(s)
                 end
             end
         end
