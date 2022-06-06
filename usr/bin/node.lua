@@ -11,7 +11,7 @@ local utxoProvider = require("utreetxo.utxoProviderInMemory")
 updater.constructor(utxoProvider)
 
 require("cache")
-cache.load()
+cacheLib.load()
 local nodenet = require("nodenet")
 require("storage")
 
@@ -44,7 +44,7 @@ function processCommand(cmd)
             if file==nil then print("Could not find file") return end
             cache.contacts[contact] = file:read("*a")
             file:close()
-            cache.save()
+            cacheLib.save()
             print("Contact " .. contact .. " saved succesfully!")
         end
     elseif parsed[1]=="contacts" then
@@ -57,7 +57,7 @@ function processCommand(cmd)
         if #parsed ~= 2 then print("Usage: remove <contactName>")
         else
             cache.contacts[parsed[2]] = nil
-            cache.save()
+            cacheLib.save()
             print("Operation done successfully")
         end
     elseif parsed[1]=="pay" then
@@ -96,8 +96,8 @@ function processCommand(cmd)
             else print("Node added succesfully and synced") end
         end
     elseif parsed[1]=="mine" then
-        if cache.getlastBlock()~="error" then
-            newBlock(storage.loadBlock(cache.getlastBlock()))
+        if cacheLib.getlastBlock()~="error" then
+            newBlock(storage.loadBlock(cacheLib.getlastBlock()))
         else
             genesisBlock()
         end

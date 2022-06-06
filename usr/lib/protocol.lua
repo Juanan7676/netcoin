@@ -301,7 +301,7 @@ function verifyBlock(block)
 end
 
 local updateutxo = function(block)
-    cache.updateTransactionCache()
+    cacheLib.updateTransactionCache()
     for _, t in ipairs(block.transactions) do -- update UTXO list
         if (t.from == cache.walletPK.serialize()) then
             cache.pb = cache.pb - t.qty + t.rem
@@ -332,18 +332,18 @@ local updateutxo = function(block)
             cache.pt[t.id] = t
         end
     end
-    cache.save()
+    cacheLib.save()
 end
 
 function consolidateBlock(block)
-    cache.setlastBlock(block.uuid)
+    cacheLib.setlastBlock(block.uuid)
     storage.saveBlock(block) -- save block in database
     updateutxo(block) -- update UTXO transactions of this block
     if (block.height % 10 == 0) then
         storage.cacheutxo()
     end -- Every 10 blocks do an UTXO cache
     cache.blocks[block.height] = block.uuid
-    cache.save()
+    cacheLib.save()
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
@@ -366,8 +366,8 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     end
     updater.consolidateTmpEnv()
     utxoProvider.consolidateTmpEnv()
-    cache.setlastBlock(lastblock.uuid)
-    cache.save()
+    cacheLib.setlastBlock(lastblock.uuid)
+    cacheLib.save()
     return true
 end
 
@@ -389,7 +389,7 @@ function reconstructUTXOFromCache(newblocks, lastblock, cacheHeight)
     end
     updater.consolidateTmpEnv()
     utxoProvider.consolidateTmpEnv()
-    cache.setlastBlock(lastblock.uuid)
-    cache.save()
+    cacheLib.setlastBlock(lastblock.uuid)
+    cacheLib.save()
     return true
 end

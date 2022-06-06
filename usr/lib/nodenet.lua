@@ -53,7 +53,7 @@ function nodenet.reloadWallet()
         local parsed = explode(",", line)
         local t = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
         if (t ~= nil) then
-            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            local diff = storage.loadBlock(cacheLib.getlastBlock()).height - storage.loadBlock(parsed[2]).height
 
             if (diff >= 3) then
                 if (#cache.lt < 5) then
@@ -77,7 +77,7 @@ function nodenet.reloadWallet()
         local parsed = explode(",", line)
         local t = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
         if (t ~= nil) then
-            local diff = storage.loadBlock(cache.getlastBlock()).height - storage.loadBlock(parsed[2]).height
+            local diff = storage.loadBlock(cacheLib.getlastBlock()).height - storage.loadBlock(parsed[2]).height
             if (diff >= 3) then
                 if (#cache.lt < 5) then
                     cache.lt[#cache.lt + 1] = t
@@ -221,7 +221,7 @@ function nodenet.dispatchNetwork()
             cache.saveNodes()
         end
     elseif parsed[1] == "GET_LAST_BLOCK" then
-        nodenet.sendClient(clientIP, clientPort, serial.serialize(storage.loadBlock(cache.getlastBlock())))
+        nodenet.sendClient(clientIP, clientPort, serial.serialize(storage.loadBlock(cacheLib.getlastBlock())))
     elseif parsed[1] == "NEWTRANSACT" then
         if cache.minerNode then
             if parsed[2] ~= nil then
@@ -263,22 +263,22 @@ function nodenet.newBlock(clientIP, clientPort, block)
         return false
     end
     if
-        cache.getlastBlock() ~= "error" and
-            block.height <= (storage.loadBlock(cache.getlastBlock()) or {height = -math.huge}).height
+        cacheLib.getlastBlock() ~= "error" and
+            block.height <= (storage.loadBlock(cacheLib.getlastBlock()) or {height = -math.huge}).height
      then
         print("Block " .. block.uuid .. " rejected due to not enough height")
         nodenet.sendClient(clientIP, clientPort, "NOT_ENOUGH_HEIGHT")
     elseif block.previous == nil then
         print("Orphaned block " .. block.uuid .. " rejected")
         nodenet.sendClient(clientIP, clientPort, "INVALID_BLOCK")
-    elseif block.previous ~= cache.getlastBlock() then -- We need more blocks!
+    elseif block.previous ~= cacheLib.getlastBlock() then -- We need more blocks!
         print("Attempting to locate parent blocks of block " .. block.uuid .. "...")
         local result = nodenet.newUnknownBlock(clientIP, clientPort, block)
         if result == false then
             print("Orphaned block " .. block.uuid .. " rejected")
             nodenet.sendClient(clientIP, clientPort, "ERR_BLOCKS_REJECTED")
         elseif (cache.minerNode) then
-            newBlock(storage.loadBlock(cache.getlastBlock()))
+            newBlock(storage.loadBlock(cacheLib.getlastBlock()))
         end
     elseif not verifyBlock(block) then
         print("Block " .. block.uuid .. " rejected due to being invalid")
@@ -288,7 +288,7 @@ function nodenet.newBlock(clientIP, clientPort, block)
         print("Added new block with id " .. block.uuid .. "at height" .. block.height)
         nodenet.sendClient(clientIP, clientPort, "BLOCK_ACCEPTED")
         if (cache.minerNode) then
-            newBlock(storage.loadBlock(cache.getlastBlock()))
+            newBlock(storage.loadBlock(cacheLib.getlastBlock()))
         end
         return true
     end

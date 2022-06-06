@@ -205,3 +205,4 @@ function minar(h, target, hashFunc, iterations)
         return false, false
     end
 end
+
