@@ -575,31 +575,6 @@ local loadUTXFromCache = function()
 	file:close()
 end
 
-function storage.discardtmputxo()
-	utxoProvider.discardTmpEnv()
-	cache._tb = nil
-	cache._pb = nil
-	cache._rt = nil
-	cache._pt = nil
-end
-
-function storage.consolidatetmputxo()
-	utxoProvider.consolidateTmpEnv()
-	cache.tb = copy(cache._tb)
-	cache.pb = copy(cache._pb)
-	cache.rt = copy(cache._rt)
-	cache.pt = copy(cache._pt)
-end
-
-function storage.setuptmpenvutxo()
-	utxoProvider.setupTmpEnv()
-
-	cache._tb = 0
-	cache._pb = 0
-	cache._rt = {}
-	cache._pt = {}
-end
-
 function storage.cacheutxo()
 	saveUTXToCache(utxoProvider.getUtxos())
 
@@ -607,7 +582,7 @@ function storage.cacheutxo()
 	file:write(serial.serialize(cache.tb))
 	file:close()
 	file = io.open("pb_cached.txt", "w")
-	file:write(serial.serialize(cache.pb))
+	file:write(serial.serialize(cache.tb))
 	file:close()
 	file = io.open("rt_cached.txt", "w")
 	file:write(serial.serialize(cache.rt))
@@ -624,7 +599,7 @@ function storage.restoreutxo()
 	cache.tb = serial.unserialize(file:read("*a"))
 	file:close()
 	file = io.open("pb_cached.txt", "r")
-	cache.pb = serial.unserialize(file:read("*a"))
+	cache.tb = serial.unserialize(file:read("*a"))
 	file:close()
 	file = io.open("rt_cached.txt", "r")
 	cache.rt = serial.unserialize(file:read("*a"))
@@ -642,7 +617,7 @@ function storage.setuptmpenvutxo_cache()
 	cache._tb = serial.unserialize(file:read("*a"))
 	file:close()
 	file = io.open("pb_cached.txt", "r")
-	cache._pb = serial.unserialize(file:read("*a"))
+	cache._tb = serial.unserialize(file:read("*a"))
 	file:close()
 	file = io.open("rt_cached.txt", "r")
 	cache._rt = serial.unserialize(file:read("*a"))

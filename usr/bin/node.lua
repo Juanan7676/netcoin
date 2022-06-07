@@ -8,7 +8,7 @@ hashService.constructor(component.data.sha256)
 local storage = require("storage")
 local updater = require("utreetxo.updater")
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
-updater.constructor(utxoProvider)
+updater.constructor(utxoProvider.iterator)
 
 require("cache")
 cacheLib.load()
@@ -112,7 +112,7 @@ function processCommand(cmd)
 		end
 	elseif parsed[1] == "refresh" then
 		term.clear()
-		updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+		updateScreen(cache.tb,cache.tb,cache.rt,cache.pt)
 		term.setCursor(1,15)
 	elseif parsed[1] == "listNodes" then
 		for i,j in pairs(cache.nodes) do
@@ -121,7 +121,7 @@ function processCommand(cmd)
 	elseif parsed[1] == "setup" then
 		storage.setup(true)
 		term.clear()
-		updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+		updateScreen(cache.tb,cache.tb,cache.rt,cache.pt)
 		term.setCursor(1,15)
     elseif parsed[1] == "myip" then
         print("IP: " .. cache.myIP)

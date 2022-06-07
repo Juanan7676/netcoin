@@ -304,7 +304,7 @@ local updateutxo = function(block)
     cacheLib.updateTransactionCache()
     for _, t in ipairs(block.transactions) do -- update UTXO list
         if (t.from == cache.walletPK.serialize()) then
-            cache.pb = cache.pb - t.qty + t.rem
+            cache.tb = cache.tb - t.qty + t.rem
         end
         if t.sources ~= nil then
             for _, s in ipairs(t.sources) do
@@ -321,13 +321,13 @@ local updateutxo = function(block)
 
         if (t.to == cache.walletPK.serialize() and t.qty > 0) then
             utxoProvider.addNormalUtxo(t, block.height)
-            cache.pb = cache.pb + t.qty
+            cache.tb = cache.tb + t.qty
             t.confirmations = 0
             cache.pt[t.id] = t
         end
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
             utxoProvider.addRemainderUtxo(t, block.height)
-            cache.pb = cache.pb + t.rem
+            cache.tb = cache.tb + t.rem
             t.confirmations = 0
             cache.pt[t.id] = t
         end
