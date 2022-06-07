@@ -30,9 +30,17 @@ function cacheLib.load()
 end
 
 function cacheLib.save()
+    local walletPK = cache.walletPK
+    local walletSK = cache.walletSK
+    cache.walletPK = nil
+    cache.walletSK = nil
+
     local file = io.open("cache.txt","w")
     file:write(serial.serialize(cache))
     file:close()
+
+    cache.walletPK = walletPK
+    cache.walletSK = walletSK
 end
 
 function cacheLib.setlastBlock(uuid)

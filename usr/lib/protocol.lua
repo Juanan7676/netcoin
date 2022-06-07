@@ -315,18 +315,17 @@ local updateutxo = function(block)
             cache.pt[t.id] = t
         end
     end
-    cacheLib.save()
 end
 
 function consolidateBlock(block)
-    cacheLib.setlastBlock(block.uuid)
     storage.saveBlock(block) -- save block in database
     updateutxo(block) -- update UTXO transactions of this block
     if (block.height % 10 == 0) then
         storage.cacheutxo()
     end -- Every 10 blocks do an UTXO cache
     cache.blocks[block.height] = block.uuid
-    cacheLib.save()
+    cacheLib.setlastBlock(block.uuid)
+    saveUTX(utxoProvider.getUtxos())
 end
 
 function reconstructUTXOFromZero(newblocks, lastblock)
@@ -350,7 +349,7 @@ function reconstructUTXOFromZero(newblocks, lastblock)
     updater.consolidateTmpEnv()
     utxoProvider.consolidateTmpEnv()
     cacheLib.setlastBlock(lastblock.uuid)
-    cacheLib.save()
+    saveUTX(utxoProvider.getUtxos())
     return true
 end
 
@@ -373,6 +372,6 @@ function reconstructUTXOFromCache(newblocks, lastblock, cacheHeight)
     updater.consolidateTmpEnv()
     utxoProvider.consolidateTmpEnv()
     cacheLib.setlastBlock(lastblock.uuid)
-    cacheLib.save()
+    saveUTX(utxoProvider.getUtxos())
     return true
 end

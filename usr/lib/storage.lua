@@ -549,7 +549,7 @@ function storage.deleteBlock(uuid)
 	storage.deleteIndex(uuid)
 end
 
-local saveUTX = function(tx_table)
+function saveUTX(tx_table)
 	local file = io.open(getMount(storage.utxoDisk) .. "/wutxos.txt","w")
 	file:write(serial.serialize(tx_table))
 	file:close()
