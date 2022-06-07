@@ -1,5 +1,3 @@
-require("protocol")
-
 local storage = require("storage")
 local napi = require("netcraftAPI")
 local component = require("component")

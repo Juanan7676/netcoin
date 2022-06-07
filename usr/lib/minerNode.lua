@@ -1,9 +1,6 @@
-require("common")
 local component = require("component")
 local serial = require("serialization")
-require("protocol")
-require("wallet")
-local hs = require("hashService")
+local hs = require("math.hashService")
 
 local updater = require("utreetxo.updater")
 

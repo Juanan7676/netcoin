@@ -16,7 +16,7 @@ local nodenet = require("nodenet")
 require("storage")
 
 require("protocol")
-protocolConstructor(component, storage,serial, updater, utxoProvider)
+protocolConstructor(component, storage, serial, updater, utxoProvider)
 
 require("common")
 require("minerNode")
