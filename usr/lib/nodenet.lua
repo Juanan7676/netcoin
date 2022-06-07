@@ -5,8 +5,7 @@ local serial = require("serialization")
 local os = require("os")
 local modem = component.modem
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
-require("common")
-require("minerNode")
+local hashService = require("math.hashService")
 
 local nodenet = {}
 
@@ -33,65 +32,6 @@ function nodenet.connectClient(c, p)
         nodenet.sync()
     end
     return true
-end
-
-function nodenet.reloadWallet()
-    local file =
-        assert(
-        io.open(getMount(storage.utxoDisk) .. "/walletutxo.txt", "r"),
-        "Error opening file " .. getMount(storage.utxoDisk) .. "/walletutxo.txt"
-    )
-    local line = file:read()
-    cache.lt = {}
-    cache.pt = {}
-    cache.cb = 0
-    cache.tb = 0
-
-    while line ~= nil do
-        local parsed = explode(",", line)
-        local t = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
-        if (t ~= nil) then
-            local diff = storage.loadBlock(cacheLib.getlastBlock()).height - storage.loadBlock(parsed[2]).height
-
-            if (diff >= 3) then
-                if (#cache.lt < 5) then
-                    cache.lt[#cache.lt + 1] = t
-                end
-                cache.cb = cache.cb + t.qty
-                cache.tb = cache.tb + t.qty
-            else
-                cache.pt[#cache.pt + 1] = {t, diff}
-                cache.tb = cache.tb + t.qty
-            end
-        end
-        line = file:read()
-        os.sleep()
-    end
-    file:close()
-    file = assert(io.open(getMount(storage.utxoDisk) .. "/walletremutxo.txt", "r"))
-    line = file:read()
-
-    while line ~= nil do
-        local parsed = explode(",", line)
-        local t = getTransactionFromBlock(storage.loadBlock(parsed[2]), parsed[1])
-        if (t ~= nil) then
-            local diff = storage.loadBlock(cacheLib.getlastBlock()).height - storage.loadBlock(parsed[2]).height
-            if (diff >= 3) then
-                if (#cache.lt < 5) then
-                    cache.lt[#cache.lt + 1] = t
-                end
-                cache.cb = cache.cb + t.rem
-                cache.tb = cache.tb + t.rem
-            else
-                cache.pt[#cache.pt + 1] = {t, diff}
-                cache.tb = cache.tb + t.rem
-            end
-        end
-        line = file:read()
-        os.sleep()
-    end
-    file:close()
-    updateScreen(cache.tb, cache.tb, cache.rt, cache.pt)
 end
 
 function nodenet.confectionateTransaction(to, qty)
@@ -125,7 +65,7 @@ function nodenet.confectionateTransaction(to, qty)
         end
         if totalIN >= qty then
             t.rem = totalIN - qty
-            t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. hashSources(t.sources) .. t.rem, cache.walletSK)
+            t.sig = data.ecdsa(t.id .. t.from .. t.to .. t.qty .. hashService.hashSources(t.sources) .. t.rem, cache.walletSK)
             return t
         end
     end

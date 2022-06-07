@@ -8,6 +8,23 @@ service.hash = function(data)
     return hashFunc(data)
 end
 
+service.hashSources = function(sources_table)
+    local hash = ""
+    table.sort(
+        sources_table,
+        function(a, b)
+            return a.txid < b.txid
+        end
+    )
+    for _, t in ipairs(sources_table) do
+        hash = service.hash(hash .. t.height .. t.txid .. t.proof.baseHash .. t.proof.index)
+        for _,v in ipairs(t.proof.hashes) do
+            hash = service.hash(hash .. v)
+        end
+    end
+    return hash
+end
+
 service.hashTransactions = function(transaction_table)
     local hash = ""
     table.sort(
@@ -18,15 +35,7 @@ service.hashTransactions = function(transaction_table)
     )
     for _, t in ipairs(transaction_table) do
         hash = service.hash(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
-        table.sort(
-            t.sources,
-            function(a, b)
-                return a < b
-            end
-        )
-        for _, v in ipairs(t.sources) do
-            hash = service.hash(hash .. v)
-        end
+        hash = service.hash(hash .. service.hashSources(t.sources))
     end
     return hash
 end

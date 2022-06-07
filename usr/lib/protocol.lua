@@ -95,23 +95,6 @@ function getTransactionFromBlock(block, uid)
     return nil
 end
 
-function hashSources(sources_table)
-    local hash = ""
-    table.sort(
-        sources_table,
-        function(a, b)
-            return a.txid < b.txid
-        end
-    )
-    for _, t in ipairs(sources_table) do
-        hash = hashService.hash(hash .. t.height .. t.txid .. t.proof.baseHash .. t.proof.index)
-        for _,v in ipairs(t.proof.hashes) do
-            hash = hashService.hash(hash .. v)
-        end
-    end
-    return hash
-end
-
 function loadFromHeight(height, id)
     local block = storage.loadBlock(cache.blocks[height])
     for _,v in ipairs(block.transactions) do
@@ -156,7 +139,7 @@ function verifyTransaction(t)
         end
         if
             not component.data.ecdsa(
-                t.id .. t.from .. t.to .. t.qty .. hashSources(t.sources) .. t.rem,
+                t.id .. t.from .. t.to .. t.qty .. hashService.hashSources(t.sources) .. t.rem,
                 pk,
                 t.sig
             )
