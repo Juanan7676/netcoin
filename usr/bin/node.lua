@@ -24,7 +24,7 @@ require("wallet")
 print("Synchronizing with network...")
 nodenet.sync()
 print("Sync done")
-updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
 term.setCursor(1,15)
 
 local t = thread.create(function()

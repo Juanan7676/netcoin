@@ -3,6 +3,7 @@ local component = require("component")
 local serial = require("serialization")
 require("protocol")
 require("wallet")
+local hs = require("hashService")
 
 local updater = require("utreetxo.updater")
 
@@ -54,7 +55,7 @@ function newBlock(block)
     end
     updater.discardTmpEnv()
 
-    b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hashTransactions(b.transactions)))
+    b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hs.hashTransactions(b.transactions)))
 
     component.modem.send(minercentralIP,7000,"NJ####" .. serial.serialize(b))
 end
@@ -78,6 +79,6 @@ function genesisBlock()
     rt.rem = 0
     rt.sig = component.data.ecdsa(rt.id .. rt.from .. rt.to .. rt.qty .. hashSources(rt.sources) .. rt.rem,cache.walletSK)
     table.insert(b.transactions,rt)
-    b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hashTransactions(b.transactions)))
+    b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hs.hashTransactions(b.transactions)))
     component.modem.send(minercentralIP,7000,"NJ####" .. serial.serialize(b))
 end
