@@ -314,7 +314,7 @@ end
 function nodenet.newUnknownBlock(clientIP, clientPort, block)
     local blockIds = {}
     local b = block
-    blockIds[b.height] = b
+    blockIds[b.height] = b.uuid
 
     if block.height == 0 then
         print("Genesis block received!")
@@ -337,7 +337,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
             cleanBlocks(blockIds)
             return false
         end
-        blockIds[b.height] = b
+        blockIds[b.height] = b.uuid
         storage.saveBlock(b)
     end
     local lastblock = storage.loadBlock(cache.lb) or {height=1}

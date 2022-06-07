@@ -239,7 +239,7 @@ function verifyBlock(block)
     end
     local headerHash =
         tohex(
-        component.data.sha256(block.height .. block.timestamp .. block.previous .. hashTransactions(block.transactions))
+        component.data.sha256(block.height .. block.timestamp .. block.previous .. hashService.hashTransactions(block.transactions))
     )
     if (headerHash ~= block.uuid) then
         print("invalid uuid")
