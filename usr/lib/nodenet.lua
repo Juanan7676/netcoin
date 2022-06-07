@@ -312,13 +312,17 @@ local cleanBlocks = function(blockIds)
 end
 
 function nodenet.newUnknownBlock(clientIP, clientPort, block)
+    local blockIds = {}
+    local b = block
+    blockIds[b.height] = b
+
     if block.height == 0 then
         print("Genesis block received!")
         storage.saveBlock(block)
-        local result = reconstructUTXOFromZero({block.uuid}, block)
+        local result = reconstructUTXOFromZero(blockIds, block)
         if (not result) then
             nodenet.sendClient(clientIP, clientPort, "INVALID_CHAIN")
-            cleanBlocks({block.uuid})
+            cleanBlocks(blockIds)
             return false
         else
             nodenet.sendClient(clientIP, clientPort, "BLOCK_ACCEPTED")
@@ -326,9 +330,6 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
         end
     end
 
-    local blockIds = {}
-    local b = block
-    blockIds[b.height] = b
     storage.saveBlock(b)
     while cache.blocks[block.height] ~= block.uuid and b.height > 0 do
         b = requestBlock(clientIP, clientPort, block.previous)
