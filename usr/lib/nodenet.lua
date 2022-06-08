@@ -234,12 +234,14 @@ function nodenet.newBlock(clientIP, clientPort, block)
 end
 
 local requestBlock = function(client, port, blockUUID)
-    nodenet.sendClient(client, port, "GETBLOCK###"..blockUUID)
+    nodenet.sendClient(client, port, "GETBLOCK####"..blockUUID)
     for k = 1,5 do
         local _,_,res = napi.listentoclient(modem, cache.myPort, client, 2)
-        res = explode("####",res)
-        if res[1] == "OK" then
-            return serial.unserialize(res[2])
+        if res ~= nil then
+            res = explode("####",res)
+            if res[1] == "OK" then
+                return serial.unserialize(res[2])
+            end
         end
     end
     return nil
