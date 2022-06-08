@@ -1,4 +1,5 @@
 local serial = require("serialization")
+local component = require("component")
 
 cache = {}
 cacheLib = {}
