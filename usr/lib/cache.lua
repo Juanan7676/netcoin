@@ -12,7 +12,7 @@ function cacheLib.load()
         cache.lb = "error"
         cache.nodes = {}
         cache.contacts = {}
-        cache.myIP = ""
+        cache.myIP = component.modem.address
         cache.myPort = 2000
         cache.rt = {}
         cache.pt = {}
