@@ -28,7 +28,7 @@ function nodenet.connectClient(c, p)
         cache.nodes[c].ip = c
         cache.nodes[c].port = p
         cache.nodes[c].miner = "1"
-        cache.saveNodes()
+        cacheLib.save()
         nodenet.sync()
     end
     return true
@@ -87,7 +87,7 @@ function nodenet.sync()
                 cache.nodes[parse[1]].ip = parse[1]
                 cache.nodes[parse[1]].port = parse[2]
                 cache.nodes[parse[1]].miner = parse[3]
-                cache.saveNodes()
+                cacheLib.save()
             end
         until msg == "END" or msg == nil or msg == "NOT_IMPLEMENTED"
         if msg == nil or msg == "nil" or msg == "NOT_IMPLEMENTED" then
@@ -156,7 +156,7 @@ function nodenet.dispatchNetwork()
             cache.nodes[node].ip = node
             cache.nodes[node].port = parsed[3]
             cache.nodes[node].miner = parsed[4]
-            cache.saveNodes()
+            cacheLib.save()
         end
     elseif parsed[1] == "GET_LAST_BLOCK" then
         nodenet.sendClient(clientIP, clientPort, serial.serialize(storage.loadBlock(cacheLib.getlastBlock())))
