@@ -54,6 +54,8 @@ function newBlock(block)
             end
         else
             cache.transpool[k] = nil
+            updater.discardTmpEnv()
+            updater.setupTmpEnv()
         end
     end
     updater.discardTmpEnv()

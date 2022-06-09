@@ -111,13 +111,15 @@ local verifySource = function(source, from)
     if transaction.to == from then
         local hash = hashService.hashData(transaction.id, transaction.to, transaction.qty)
         if hash ~= source.proof.baseHash then return false end
-        if not updater.deleteutxo(cache.acc, source) then return false end
+        cache.acc = updater.deleteutxo(cache.acc, source)
+        if not cache.acc then return false end
         return transaction.qty
     end
     if transaction.from == from then
         local hash = hashService.hashData(transaction.id, transaction.from, transaction.rem)
         if hash ~= source.proof.baseHash then return false end
-        if not updater.deleteutxo(cache.acc, source) then return false end
+        cache.acc = updater.deleteutxo(cache.acc, source)
+        if not cache.acc then return false end
         return transaction.rem
     end
     return false
@@ -275,7 +277,7 @@ function verifyBlock(block)
         print("invalid pow " .. block.uuid)
         return false
     end
-
+    
     if not verifyTransactions(block) then
         print("invalid transactions")
         return false
@@ -293,14 +295,14 @@ local updateutxo = function(block)
             for _, s in ipairs(t.sources) do
                 local result = updater.deleteutxo(cache.acc, s)
                 if result==false then return nil end
-
+                cache.acc = result
                 if (t.from == cache.walletPK.serialize()) then
                     utxoProvider.deleteUtxo(s)
                 end
             end
         end
-        if (t.qty > 0) then updater.saveNormalUtxo(cache.acc, t) end
-        if (t.rem > 0) then updater.saveRemainderUtxo(cache.acc, t) end
+        if (t.qty > 0) then cache.acc = updater.saveNormalUtxo(cache.acc, t) end
+        if (t.rem > 0) then cache.acc = updater.saveRemainderUtxo(cache.acc, t) end
 
         if (t.to == cache.walletPK.serialize() and t.qty > 0) then
             utxoProvider.addNormalUtxo(t, block.height)
@@ -344,7 +346,12 @@ function reconstructUTXOFromZero(newblocks, lastblock)
             end
             return false
         end
+        
         updateutxo(block)
+        if (block.height % 10 == 0) then
+            storage.cacheutxo()
+        end
+        cache.blocks[block.height] = block.uuid
     end
     updater.consolidateTmpEnv()
     utxoProvider.consolidateTmpEnv()

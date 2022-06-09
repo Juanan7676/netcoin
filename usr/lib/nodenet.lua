@@ -273,8 +273,8 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
     end
 
     storage.saveBlock(b)
-    while cache.blocks[block.height] ~= block.uuid and b.height > 0 do
-        b = requestBlock(clientIP, clientPort, block.previous)
+    while cache.blocks[b.height] ~= b.uuid and b.height > 0 do
+        b = requestBlock(clientIP, clientPort, b.previous)
         if b==nil then
             cleanBlocks(blockIds)
             return false
