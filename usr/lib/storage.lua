@@ -8,9 +8,6 @@ local term = require("term")
 
 require("common")
 
-local hashService = require("math.hashService")
-hashService.constructor(function(data) return tohex(component.data.sha256(data)) end)
-
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
 local updater = require("utreetxo.updater")
 updater.constructor(utxoProvider.iterator)
