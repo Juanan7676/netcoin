@@ -301,8 +301,6 @@ local updateutxo = function(block)
                 end
             end
         end
-        if (t.qty > 0) then cache.acc = updater.saveNormalUtxo(cache.acc, t) end
-        if (t.rem > 0) then cache.acc = updater.saveRemainderUtxo(cache.acc, t) end
 
         if (t.to == cache.walletPK.serialize() and t.qty > 0) then
             utxoProvider.addNormalUtxo(t, block.height)
@@ -316,6 +314,9 @@ local updateutxo = function(block)
             t.confirmations = 0
             cache.pt[t.id] = t
         end
+        
+        if (t.qty > 0) then cache.acc = updater.saveNormalUtxo(cache.acc, t) end
+        if (t.rem > 0) then cache.acc = updater.saveRemainderUtxo(cache.acc, t) end
     end
 end
 

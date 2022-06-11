@@ -46,7 +46,7 @@ function nodenet.confectionateTransaction(to, qty)
     t.sources = {}
     local totalIN = 0
 
-    for tx in utxoProvider.getUtxos() do
+    for _, tx in ipairs(utxoProvider.getUtxos()) do
         local source = {
             height = tx.bH,
             proof = tx.proof,
@@ -284,7 +284,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
     end
     local lastblock = storage.loadBlock(cache.lb) or {height=1}
     if b.height==0 or b.height < (lastblock.height - lastblock.height%10) then
-        local result = reconstructUTXOFromZero(blockIds, b)
+        local result = reconstructUTXOFromZero(blockIds, block)
         if (not result) then
             nodenet.sendClient(clientIP, clientPort, "INVALID_BLOCKS")
         else
@@ -292,7 +292,7 @@ function nodenet.newUnknownBlock(clientIP, clientPort, block)
             return true
         end
     else
-        local result = reconstructUTXOFromCache(blockIds, b, lastblock.height - lastblock.height%10)
+        local result = reconstructUTXOFromCache(blockIds, block, lastblock.height - lastblock.height%10)
         if (not result) then
             nodenet.sendClient(clientIP, clientPort, "INVALID_CHAIN")
         else
