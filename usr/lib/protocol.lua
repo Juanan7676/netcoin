@@ -288,17 +288,15 @@ end
 local updateutxo = function(block)
     cacheLib.updateTransactionCache()
     for _, t in ipairs(block.transactions) do -- update UTXO list
-        if (t.from == cache.walletPK.serialize()) then
-            cache.tb = cache.tb - t.qty + t.rem
-        end
         if t.sources ~= nil then
             for _, s in ipairs(t.sources) do
-                local result = updater.deleteutxo(cache.acc, s)
-                if result==false then return nil end
-                cache.acc = result
                 if (t.from == cache.walletPK.serialize()) then
                     utxoProvider.deleteUtxo(s)
                 end
+
+                local result = updater.deleteutxo(cache.acc, s)
+                if result==false then return nil end
+                cache.acc = result
             end
         end
 
@@ -308,14 +306,16 @@ local updateutxo = function(block)
             t.confirmations = 0
             cache.pt[t.id] = t
         end
+
+        if (t.qty > 0) then cache.acc = updater.saveNormalUtxo(cache.acc, t) end
+
         if (t.from == cache.walletPK.serialize() and t.rem > 0) then
             utxoProvider.addRemainderUtxo(t, block.height)
-            cache.tb = cache.tb + t.rem
+            cache.tb = cache.tb + t.rem - t.qty
             t.confirmations = 0
             cache.pt[t.id] = t
         end
         
-        if (t.qty > 0) then cache.acc = updater.saveNormalUtxo(cache.acc, t) end
         if (t.rem > 0) then cache.acc = updater.saveRemainderUtxo(cache.acc, t) end
     end
 end

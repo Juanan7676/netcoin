@@ -62,6 +62,7 @@ end
 
 function Test03_ComplexDelete()
     local acc = {}
+    utxoProvider.setUtxos({})
     for k = 1, 50 do
         local utxo = {
             id = tostring(k),
@@ -76,6 +77,30 @@ function Test03_ComplexDelete()
         acc = updater.saveNormalUtxo(acc, utxo)
     end
 
+    for k = 1, 50 do
+        local toDelete = utxoProvider.getUtxos()[k]
+        acc = updater.deleteutxo(acc, toDelete)
+        lu.assertNotEquals(acc, false)
+    end
+end
+
+function Test03B_ComplexDeleteRemainder()
+    local acc = {}
+    utxoProvider.setUtxos({})
+    for k = 1, 50 do
+        local utxo = {
+            id = tostring(k),
+            from = tostring(-k),
+            to = tostring(-k),
+            qty = k * 134315141 % 400,
+            rem = k * 549625732 % 842,
+            sources = {tostring(2 * k), tostring(2 * k + 1)},
+            sig = tostring(k * 4310573825438 % 124942)
+        }
+        utxoProvider.addRemainderUtxo(utxo, 0)
+        acc = updater.saveRemainderUtxo(acc, utxo)
+    end
+    
     for k = 1, 50 do
         local toDelete = utxoProvider.getUtxos()[k]
         acc = updater.deleteutxo(acc, toDelete)
@@ -105,6 +130,29 @@ function Test04_deletetwice()
     lu.assertNotEquals(acc, false)
     acc = updater.deleteutxo(acc, proof)
     lu.assertEquals(acc, false)
+end
+
+function Test05_mixedOps()
+    local acc = {}
+    utxoProvider.setUtxos({})
+    for k = 1, 50 do
+        if k >= 5 then
+            local toDelete = utxoProvider.getUtxos()[k - 1]
+            acc = updater.deleteutxo(acc, toDelete)
+            lu.assertNotEquals(acc, false)
+        end
+        local utxo = {
+            id = tostring(k),
+            from = tostring(-k),
+            to = tostring(-k),
+            qty = k * 134315141 % 400,
+            rem = k * 549625732 % 842,
+            sources = {tostring(2 * k), tostring(2 * k + 1)},
+            sig = tostring(k * 4310573825438 % 124942)
+        }
+        utxoProvider.addRemainderUtxo(utxo, 0)
+        acc = updater.saveRemainderUtxo(acc, utxo)
+    end
 end
 
 os.exit(lu.LuaUnit.run())
