@@ -3,6 +3,7 @@ local serial = require("serialization")
 local hs = require("math.hashService")
 
 local updater = require("utreetxo.updater")
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
 
 function newTransaction(t)
     cache.transpool[t.id] = t
@@ -45,20 +46,29 @@ function newBlock(block)
     b.uuid = "PLACEHOLDERFOR64BYTES---0000000000000000000000000000000000000000"
     
     updater.setupTmpEnv()
+    utxoProvider.setupTmpEnv()
     for k,v in pairs(cache.transpool) do
+        updater.setupTmpEnv()
+        utxoProvider.setupTmpEnv()
         local result = verifyTransaction(v)
         if (result~=false and result~="gen") then
             table.insert(b.transactions,v)
             if #serial.serialize(b) > 5000 then -- maximum block size reached
                 b.transactions[#b.transactions] = nil
+                updater.discardTmpEnv()
+                utxoProvider.discardTmpEnv()
+            else
+                updater.consolidateTmpEnv()
+                utxoProvider.consolidateTmpEnv()
             end
         else
             cache.transpool[k] = nil
             updater.discardTmpEnv()
-            updater.setupTmpEnv()
+            utxoProvider.discardTmpEnv()
         end
     end
     updater.discardTmpEnv()
+    utxoProvider.discardTmpEnv()
 
     b.uuid = tohex(component.data.sha256(b.height .. b.timestamp .. b.previous .. hs.hashTransactions(b.transactions)))
 

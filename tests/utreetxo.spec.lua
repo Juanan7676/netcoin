@@ -78,7 +78,8 @@ function Test03_ComplexDelete()
     end
 
     for k = 1, 50 do
-        local toDelete = utxoProvider.getUtxos()[k]
+        local toDelete = utxoProvider.getUtxos()[1]
+        utxoProvider.deleteUtxo(toDelete)
         acc = updater.deleteutxo(acc, toDelete)
         lu.assertNotEquals(acc, false)
     end
@@ -102,7 +103,8 @@ function Test03B_ComplexDeleteRemainder()
     end
     
     for k = 1, 50 do
-        local toDelete = utxoProvider.getUtxos()[k]
+        local toDelete = utxoProvider.getUtxos()[1]
+        utxoProvider.deleteUtxo(toDelete)
         acc = updater.deleteutxo(acc, toDelete)
         lu.assertNotEquals(acc, false)
     end
@@ -137,7 +139,8 @@ function Test05_mixedOps()
     utxoProvider.setUtxos({})
     for k = 1, 50 do
         if k >= 5 then
-            local toDelete = utxoProvider.getUtxos()[k - 1]
+            local toDelete = utxoProvider.getUtxos()[1]
+            utxoProvider.deleteUtxo(toDelete)
             acc = updater.deleteutxo(acc, toDelete)
             lu.assertNotEquals(acc, false)
         end
@@ -150,6 +153,32 @@ function Test05_mixedOps()
             sources = {tostring(2 * k), tostring(2 * k + 1)},
             sig = tostring(k * 4310573825438 % 124942)
         }
+        utxoProvider.addRemainderUtxo(utxo, 0)
+        acc = updater.saveRemainderUtxo(acc, utxo)
+    end
+end
+
+function Test06_mixedOpsOdd()
+    local acc = {}
+    utxoProvider.setUtxos({})
+    for k = 1, 7 do
+        if k >= 6 then
+            local toDelete = utxoProvider.getUtxos()[1]
+            utxoProvider.deleteUtxo(toDelete)
+            acc = updater.deleteutxo(acc, toDelete)
+            lu.assertNotEquals(acc, false)
+        end
+        local utxo = {
+            id = tostring(k),
+            from = tostring(-k),
+            to = tostring(-k),
+            qty = k * 134315141 % 400,
+            rem = k * 549625732 % 842,
+            sources = {tostring(2 * k), tostring(2 * k + 1)},
+            sig = tostring(k * 4310573825438 % 124942)
+        }
+        utxoProvider.addNormalUtxo(utxo, 0)
+        acc = updater.saveNormalUtxo(acc, utxo)
         utxoProvider.addRemainderUtxo(utxo, 0)
         acc = updater.saveRemainderUtxo(acc, utxo)
     end

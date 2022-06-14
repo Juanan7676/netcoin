@@ -186,19 +186,23 @@ end
 local verifyTransactions = function(block)
     local genFound = false
     updater.setupTmpEnv()
+    utxoProvider.setupTmpEnv()
     for _, v in ipairs(block.transactions) do
         local result = verifyTransaction(v)
         if result == false then
             updater.discardTmpEnv()
+            utxoProvider.discardTmpEnv()
             return false
         end
         if result == "gen" then
             if v.qty ~= getReward(block.height) then
                 updater.discardTmpEnv()
+                utxoProvider.discardTmpEnv()
                 return false
             end
             if genFound == true then
                 updater.discardTmpEnv()
+                utxoProvider.discardTmpEnv()
                 return false
             else
                 genFound = true
@@ -206,6 +210,7 @@ local verifyTransactions = function(block)
         end
     end
     updater.discardTmpEnv()
+    utxoProvider.discardTmpEnv()
     return true
 end
 
@@ -373,6 +378,8 @@ function reconstructUTXOFromCache(newblocks, lastblock, cacheHeight)
             for _, b in pairs(newblocks) do
                 storage.deleteBlock(b.uuid)
             end
+            updater.discardTmpEnv()
+            utxoProvider.discardTmpEnv()
             return false
         end
         updateutxo(block)
