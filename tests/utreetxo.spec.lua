@@ -14,24 +14,8 @@ local utxoProvider = require("utreetxo.utxoProviderInMemory")
 local updater = require("utreetxo.updater")
 updater.constructor(utxoProvider.iterator)
 
-local acc = {}
-
-function Dump(o)
-    if type(o) == "table" then
-        local s = "{ "
-        for k, v in pairs(o) do
-            if type(k) ~= "number" then
-                k = '"' .. k .. '"'
-            end
-            s = s .. "[" .. k .. "] = " .. Dump(v) .. ","
-        end
-        return s .. "} "
-    else
-        return tostring(o)
-    end
-end
-
 function Test01_simpleadd()
+    local acc = {}
     local myutxo = {
         id = "hey!",
         from = "test",
@@ -52,6 +36,21 @@ function Test01_simpleadd()
 end
 
 function Test02_Delete()
+    local acc = {}
+    utxoProvider.setUtxos({})
+
+    local myutxo = {
+        id = "hey!",
+        from = "test",
+        to = "test2",
+        qty = 1,
+        rem = 0,
+        sources = {"utxo1", "utxo2"},
+        sig = "blablabla"
+    }
+    utxoProvider.addNormalUtxo(myutxo, 0)
+    acc = updater.saveNormalUtxo(acc, myutxo)
+
     local tx = utxoProvider.getUtxos()[1]
     local res = updater.deleteutxo(acc, tx)
     lu.assertNotEquals(res, nil)
@@ -113,7 +112,7 @@ end
 function Test04_deletetwice()
     -- clean
     utxoProvider.setUtxos({})
-    acc = {}
+    local acc = {}
     local myutxo = {
         id = "hey!",
         from = "test",
@@ -182,6 +181,90 @@ function Test06_mixedOpsOdd()
         utxoProvider.addRemainderUtxo(utxo, 0)
         acc = updater.saveRemainderUtxo(acc, utxo)
     end
+end
+
+function Test07_discardTmpEnv()
+    cache = {}
+    cache.acc = {}
+    utxoProvider.setUtxos({})
+
+    updater.setupTmpEnv()
+    local myutxo = {
+        id = "hey!",
+        from = "test",
+        to = "test2",
+        qty = 1,
+        rem = 0,
+        sources = {"utxo1", "utxo2"},
+        sig = "blablabla"
+    }
+    utxoProvider.addNormalUtxo(myutxo, 0)
+    cache.acc = updater.saveNormalUtxo(cache.acc, myutxo)
+    updater.discardTmpEnv()
+    lu.assertEquals(cache.acc[0], nil)
+end
+
+function Test08_consolidateTmpEnv()
+    cache = {}
+    cache.acc = {}
+    utxoProvider.setUtxos({})
+
+    updater.setupTmpEnv()
+    local myutxo = {
+        id = "hey!",
+        from = "test",
+        to = "test2",
+        qty = 1,
+        rem = 0,
+        sources = {"utxo1", "utxo2"},
+        sig = "blablabla"
+    }
+    utxoProvider.addNormalUtxo(myutxo, 0)
+    cache.acc = updater.saveNormalUtxo(cache.acc, myutxo)
+    updater.consolidateTmpEnv()
+    lu.assertNotEquals(cache.acc[0], nil)
+end
+
+function Test09_discardTmpEnvUTX()
+    cache = {}
+    cache.acc = {}
+    utxoProvider.setUtxos({})
+
+    utxoProvider.setupTmpEnv()
+    local myutxo = {
+        id = "hey!",
+        from = "test",
+        to = "test2",
+        qty = 1,
+        rem = 0,
+        sources = {"utxo1", "utxo2"},
+        sig = "blablabla"
+    }
+    utxoProvider.addNormalUtxo(myutxo, 0)
+    cache.acc = updater.saveNormalUtxo(cache.acc, myutxo)
+    utxoProvider.discardTmpEnv()
+    lu.assertEquals(#utxoProvider.getUtxos(), 0)
+end
+
+function Test10_consolidateTmpEnvUTX()
+    cache = {}
+    cache.acc = {}
+    utxoProvider.setUtxos({})
+
+    utxoProvider.setupTmpEnv()
+    local myutxo = {
+        id = "hey!",
+        from = "test",
+        to = "test2",
+        qty = 1,
+        rem = 0,
+        sources = {"utxo1", "utxo2"},
+        sig = "blablabla"
+    }
+    utxoProvider.addNormalUtxo(myutxo, 0)
+    cache.acc = updater.saveNormalUtxo(cache.acc, myutxo)
+    utxoProvider.consolidateTmpEnv()
+    lu.assertEquals(#utxoProvider.getUtxos(), 1)
 end
 
 os.exit(lu.LuaUnit.run())
