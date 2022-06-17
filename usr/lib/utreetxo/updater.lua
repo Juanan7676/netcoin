@@ -107,19 +107,19 @@ end
 function updater.setupTmpEnv()
 
     if cache._acc == nil then cache._acc = {} end
-    cache._acc[#cache._acc + 1] = cache.acc
+    cache._acc[#cache._acc + 1] = copy(cache.acc)
 
     if cache._cb == nil then cache._cb = {} end
-    cache._cb[#cache._cb + 1] = cache.cb
+    cache._cb[#cache._cb + 1] = copy(cache.cb)
 
     if cache._tb == nil then cache._tb = {} end
-    cache._tb[#cache._tb + 1] = cache.tb
+    cache._tb[#cache._tb + 1] = copy(cache.tb)
 
     if cache._pt == nil then cache._pt = {} end
-    cache._pt[#cache._pt + 1] = cache.pt
+    cache._pt[#cache._pt + 1] = copy(cache.pt)
 
     if cache._rt == nil then cache._rt = {} end
-    cache._rt[#cache._rt + 1] = cache.rt
+    cache._rt[#cache._rt + 1] = copy(cache.rt)
 end
 
 function updater.discardTmpEnv()

@@ -6,7 +6,7 @@ local utxos_backup = {}
 local hashService = require("math.hashService")
 
 function lib.setupTmpEnv()
-    utxos_backup[#utxos_backup + 1] = utxos
+    utxos_backup[#utxos_backup + 1] = copy(utxos)
 end
 
 function lib.setupZeroEnv()
