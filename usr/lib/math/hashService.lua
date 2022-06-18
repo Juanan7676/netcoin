@@ -10,13 +10,14 @@ end
 
 service.hashSources = function(sources_table)
     local hash = ""
+    local st = copy(sources_table)
     table.sort(
-        sources_table,
+        st,
         function(a, b)
             return a.txid < b.txid
         end
     )
-    for _, t in ipairs(sources_table) do
+    for _, t in ipairs(st) do
         hash = service.hash(hash .. t.height .. t.txid .. t.proof.baseHash .. t.proof.index)
         for _,v in ipairs(t.proof.hashes) do
             hash = service.hash(hash .. v)
@@ -27,13 +28,14 @@ end
 
 service.hashTransactions = function(transaction_table)
     local hash = ""
+    local txTable = copy(transaction_table)
     table.sort(
-        transaction_table,
+        txTable,
         function(a, b)
             return a.id < b.id
         end
     )
-    for _, t in ipairs(transaction_table) do
+    for _, t in ipairs(txTable) do
         hash = service.hash(hash .. t.id .. t.from .. t.to .. t.qty .. t.rem .. t.sig)
         hash = service.hash(hash .. service.hashSources(t.sources))
     end
