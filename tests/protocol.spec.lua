@@ -10,7 +10,6 @@ hashService.constructor(package.loaded.component.data.sha256)
 local storage = require("mocks.storage")
 local updater = require("utreetxo.updater")
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
-updater.constructor(utxoProvider)
 
 require("cache")
 cacheLib.load()

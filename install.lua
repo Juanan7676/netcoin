@@ -15,6 +15,7 @@ os.execute('wget -f '..baseDir.."usr/lib/math/hashService.lua usr/lib/math/hashS
 os.execute('wget -f '..baseDir.."usr/lib/utreetxo/accumulator.lua usr/lib/utreetxo/accumulator.lua")
 os.execute('wget -f '..baseDir.."usr/lib/utreetxo/updater.lua usr/lib/utreetxo/updater.lua")
 os.execute('wget -f '..baseDir.."usr/lib/utreetxo/utxoProviderInMemory.lua usr/lib/utreetxo/utxoProviderInMemory.lua")
+os.execute('wget -f '..baseDir.."usr/lib/utreetxo/utxoProviderCustom.lua usr/lib/utreetxo/utxoProviderCustom.lua")
 os.execute('wget -f '..baseDir.."usr/lib/common.lua usr/lib/common.lua")
 os.execute('wget -f '..baseDir.."usr/lib/cache.lua usr/lib/cache.lua")
 os.execute('wget -f '..baseDir.."usr/lib/minerNode.lua usr/lib/minerNode.lua")

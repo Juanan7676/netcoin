@@ -12,7 +12,7 @@ hashService.constructor(sha256)
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
 
 local updater = require("utreetxo.updater")
-updater.constructor(utxoProvider.iterator)
+updater.addProvider(utxoProvider.iterator)
 
 function Test01_simpleadd()
     local acc = {}

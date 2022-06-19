@@ -8,7 +8,7 @@ hashService.constructor(component.data.sha256)
 local storage = require("storage")
 local updater = require("utreetxo.updater")
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
-updater.constructor(utxoProvider.iterator)
+updater.addProvider(utxoProvider.iterator)
 
 require("cache")
 cacheLib.load()

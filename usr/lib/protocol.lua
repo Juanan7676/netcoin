@@ -32,6 +32,8 @@ local serial = {}
 local utxoProvider = {}
 
 ---@class Updater
+---@field addProvider fun(prov: UtxoProvider): nil
+---@field removeLastProvider fun(): nil
 ---@field saveNormalUtxo fun(acc: Accumulator, tx: Transaction): Accumulator
 ---@field saveRemainderUtxo fun(acc: Accumulator, tx: Transaction): Accumulator
 ---@field deleteutxo fun(acc: Accumulator, proof: TransactionProof): Accumulator | false | nil
@@ -185,23 +187,37 @@ end
 
 local verifyTransactions = function(block)
     local genFound = false
+    local utxos2delete = {}
+
+    for _,v in ipairs(block.transactions) do
+        for _,s in ipairs(v.sources) do
+            utxos2delete[#utxos2delete+1] = s
+        end
+    end
+
+    local customProv = require("utreetxo.utxoProviderCustom")
+    customProv.set(utxos2delete)
+    updater.addProvider(customProv.iterator)
     updater.setupTmpEnv()
     utxoProvider.setupTmpEnv()
     for _, v in ipairs(block.transactions) do
         local result = verifyTransaction(v)
         if result == false then
             updater.discardTmpEnv()
+            updater.removeLastProvider()
             utxoProvider.discardTmpEnv()
             return false
         end
         if result == "gen" then
             if v.qty ~= getReward(block.height) then
                 updater.discardTmpEnv()
+                updater.removeLastProvider()
                 utxoProvider.discardTmpEnv()
                 return false
             end
             if genFound == true then
                 updater.discardTmpEnv()
+                updater.removeLastProvider()
                 utxoProvider.discardTmpEnv()
                 return false
             else
@@ -210,6 +226,7 @@ local verifyTransactions = function(block)
         end
     end
     updater.discardTmpEnv()
+    updater.removeLastProvider()
     utxoProvider.discardTmpEnv()
     return true
 end
@@ -291,6 +308,18 @@ function verifyBlock(block)
 end
 
 local updateutxo = function(block)
+    local utxos2delete = {}
+
+    for _,v in ipairs(block.transactions) do
+        for _,s in ipairs(v.sources) do
+            utxos2delete[#utxos2delete+1] = s
+        end
+    end
+
+    local customProv = require("utreetxo.utxoProviderCustom")
+    customProv.set(utxos2delete)
+    updater.addProvider(customProv.iterator)
+
     cacheLib.updateTransactionCache()
     for _, t in ipairs(block.transactions) do -- update UTXO list
         if t.sources ~= nil then
@@ -323,6 +352,8 @@ local updateutxo = function(block)
         
         if (t.rem > 0) then cache.acc = updater.saveRemainderUtxo(cache.acc, t) end
     end
+
+    updater.removeLastProvider()
 end
 
 function consolidateBlock(block)

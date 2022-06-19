@@ -9,8 +9,6 @@ local term = require("term")
 require("common")
 
 local utxoProvider = require("utreetxo.utxoProviderInMemory")
-local updater = require("utreetxo.updater")
-updater.constructor(utxoProvider.iterator)
 
 storage.data = component.data
 storage.disks = {}

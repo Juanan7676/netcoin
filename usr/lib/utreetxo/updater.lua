@@ -7,12 +7,26 @@ local updater = {}
 
 ---@alias UtxoProviderFunc fun(minH: integer, maxH: integer, minX: integer, maxX: integer): Proof[]
 
----@type UtxoProviderFunc
-local utxoProvider = nil
+local providers = {}
 
----@param up UtxoProviderFunc
-function updater.constructor(up)
-    utxoProvider = up
+---@type UtxoProviderFunc
+local utxoProvider = function(...)
+    local args = ...
+    return coroutine.wrap(function()
+        for _,prov in pairs(providers) do
+            for tx in prov(table.unpack(args)) do
+                coroutine.yield(tx)
+            end
+        end
+    end)
+end
+
+function updater.addProvider(up)
+    providers[#providers+1] = up
+end
+
+function updater.removeLastProvider()
+    providers[#providers] = nil
 end
 
 local rootPromoter = function(h, treeH, min, max)

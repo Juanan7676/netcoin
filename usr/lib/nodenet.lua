@@ -56,10 +56,10 @@ function nodenet.confectionateTransaction(to, qty)
         if transaction==nil then print("ERROR: Stored utxo not found on chain") return nil end
         if transaction.to == t.from then
             totalIN = totalIN + transaction.qty
-            t.sources[#t.sources+1] = source
+            t.sources[#t.sources+1] = copy(source)
         elseif transaction.from == t.from then
             totalIN = totalIN + transaction.rem
-            t.sources[#t.sources+1] = source
+            t.sources[#t.sources+1] = copy(source)
         else
             print("ERROR: Stored utxo is incorrect, contact a developer!!!")
         end
