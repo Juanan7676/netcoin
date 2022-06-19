@@ -11,7 +11,7 @@ local providers = {}
 
 ---@type UtxoProviderFunc
 local utxoProvider = function(...)
-    local args = ...
+    local args = table.pack(...)
     return coroutine.wrap(function()
         for _,prov in pairs(providers) do
             for tx in prov(table.unpack(args)) do
