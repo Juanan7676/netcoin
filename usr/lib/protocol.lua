@@ -185,7 +185,7 @@ local getPrevChain = function(block, n)
     return fbago
 end
 
-local verifyTransactions = function(block)
+function verifyTransactions(block)
     local genFound = false
     local utxos2delete = {}
 

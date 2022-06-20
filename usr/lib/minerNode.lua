@@ -48,23 +48,15 @@ function newBlock(block)
     updater.setupTmpEnv()
     utxoProvider.setupTmpEnv()
     for k,v in pairs(cache.transpool) do
-        updater.setupTmpEnv()
-        utxoProvider.setupTmpEnv()
-        local result = verifyTransaction(v)
-        if (result~=false and result~="gen") then
-            table.insert(b.transactions,v)
+        b.transactions[#b.transactions+1] = v
+        local result = verifyTransactions(b)
+        if result==true then
             if #serial.serialize(b) > 5000 then -- maximum block size reached
                 b.transactions[#b.transactions] = nil
-                updater.discardTmpEnv()
-                utxoProvider.discardTmpEnv()
-            else
-                updater.consolidateTmpEnv()
-                utxoProvider.consolidateTmpEnv()
             end
         else
+            b.transactions[#b.transactions] = nil
             cache.transpool[k] = nil
-            updater.discardTmpEnv()
-            utxoProvider.discardTmpEnv()
         end
     end
     updater.discardTmpEnv()
