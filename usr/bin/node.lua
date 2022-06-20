@@ -1,35 +1,30 @@
+local thread = require("thread")
+local component = require("component")
+local serial = require("serialization")
+local term = require("term")
+
+local hashService = require("math.hashService")
+hashService.constructor(component.data.sha256)
+local storage = require("storage")
+local updater = require("utreetxo.updater")
+local utxoProvider = require("utreetxo.utxoProviderInMemory")
+updater.addProvider(utxoProvider.iterator)
+
+require("cache")
+cacheLib.load()
 local nodenet = require("nodenet")
 require("storage")
 
 require("protocol")
-protocolConstructor(require("component"), require("storage"), require("serialization"), require("filesystem"))
+protocolConstructor(component, storage, serial, updater, utxoProvider)
 
-local thread = require("thread")
-local napi = require("netcraftAPI")
-local component = require("component")
-local serial = require("serialization")
-local term = require("term")
-require("wallet")
 require("common")
 require("minerNode")
-
-cache.loadNodes()
-cache.myIP = component.modem.address
-cache.myPort = 2000
-cache.minerNode = false
-cache.minerControl=""
-cache.loadlastBlock()
+require("wallet")
 print("Synchronizing with network...")
 nodenet.sync()
 print("Sync done")
-cache.rt = {}
-cache.pt = {}
-cache.loadBalances()
-cache.loadPendingTransactions()
-cache.loadRecentTransactions()
-cache.loadTranspool()
-cache.loadContacts()
-updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+updateScreen(cache.cb,cache.tb,cache.rt,cache.pt)
 term.setCursor(1,15)
 
 local t = thread.create(function()
@@ -49,7 +44,7 @@ function processCommand(cmd)
             if file==nil then print("Could not find file") return end
             cache.contacts[contact] = file:read("*a")
             file:close()
-            cache.saveContacts()
+            cacheLib.save()
             print("Contact " .. contact .. " saved succesfully!")
         end
     elseif parsed[1]=="contacts" then
@@ -62,7 +57,7 @@ function processCommand(cmd)
         if #parsed ~= 2 then print("Usage: remove <contactName>")
         else
             cache.contacts[parsed[2]] = nil
-            cache.saveContacts()
+            cacheLib.save()
             print("Operation done successfully")
         end
     elseif parsed[1]=="pay" then
@@ -101,8 +96,8 @@ function processCommand(cmd)
             else print("Node added succesfully and synced") end
         end
     elseif parsed[1]=="mine" then
-        if cache.getlastBlock()~="error" then
-            newBlock(storage.loadBlock(cache.getlastBlock()))
+        if cacheLib.getlastBlock()~="error" then
+            newBlock(storage.loadBlock(cacheLib.getlastBlock()))
         else
             genesisBlock()
         end
@@ -117,7 +112,7 @@ function processCommand(cmd)
 		end
 	elseif parsed[1] == "refresh" then
 		term.clear()
-		updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+		updateScreen(cache.tb,cache.tb,cache.rt,cache.pt)
 		term.setCursor(1,15)
 	elseif parsed[1] == "listNodes" then
 		for i,j in pairs(cache.nodes) do
@@ -126,7 +121,7 @@ function processCommand(cmd)
 	elseif parsed[1] == "setup" then
 		storage.setup(true)
 		term.clear()
-		updateScreen(cache.tb,cache.pb,cache.rt,cache.pt)
+		updateScreen(cache.tb,cache.tb,cache.rt,cache.pt)
 		term.setCursor(1,15)
     elseif parsed[1] == "myip" then
         print("IP: " .. cache.myIP)

@@ -33,3 +33,5 @@ jobs:
         run: lua tests/protocol.spec.lua -v
       - name: Miner tests
         run: lua tests/miner.spec.lua -v
+      - name: Utreetxo tests
+        run: lua tests/utreetxo.spec.lua -v
